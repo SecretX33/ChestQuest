@@ -1,0 +1,20 @@
+############################################################
+# +------------------------------------------------------+ #
+# |                     @name@                      | #
+# +------------------------------------------------------+ #
+############################################################
+
+# Plugin created by SecretX (github.com/SecretX33)
+# Version @version@
+
+# @name@ allows you to mark chests so they content become unique to players
+
+# This file will NEVER get modified after being created, when updating please make sure you rename this one and let a new one be created, and copy your old configs to the new config file.
+
+############################################################
+# +------------------------------------------------------+ #
+# |                   General Settings                   | #
+# +------------------------------------------------------+ #
+############################################################
+
+general:

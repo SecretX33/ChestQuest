@@ -1,0 +1,34 @@
+name: ${name}
+version: ${version}
+main: io.github.secretx33.chestquest.Main
+api-version: 1.12
+authors: [SecretX]
+description: Makes chests unique to each player.
+website: https://github.com/SecretX33
+
+commands:
+  cq:
+    description: ${name}
+    usage: /<command>
+    aliases: [chestq, chestquest]
+
+permissions:
+  cq.*:
+    description: Gives access to all @name@ commands
+    children:
+      cq.open: true
+      cq.edit: true
+      cq.reload: true
+      cq.debug: true
+  cq.open:
+    description: Allows a player to open a "quest" chest
+    default: true
+  cq.edit:
+    description: Allows a player to create, lock, unlock and edit "quest" chests
+    default: op
+  cq.reload:
+    description: Allows a player to reload the plugin config
+    default: op
+  cq.debug:
+    description: Allows a player to toggle debug mode (for developers only)
+    default: op
