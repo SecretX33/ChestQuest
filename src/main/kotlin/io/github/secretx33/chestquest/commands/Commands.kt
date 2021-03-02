@@ -4,7 +4,6 @@ import io.github.secretx33.chestquest.config.Config
 import io.github.secretx33.chestquest.config.Const
 import io.github.secretx33.chestquest.config.Const.DEBUG_MODE_STATE_CHANGED
 import io.github.secretx33.chestquest.config.Const.PLUGIN_COMMAND_PREFIX
-import io.github.secretx33.chestquest.config.Const.PLUGIN_PERMISSION_PREFIX
 import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.*
 import org.bukkit.command.Command

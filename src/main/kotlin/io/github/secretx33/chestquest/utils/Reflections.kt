@@ -3,7 +3,6 @@ package io.github.secretx33.chestquest.utils
 import com.google.common.base.Objects
 import com.google.common.base.Preconditions
 import com.google.gson.Gson
-import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import org.bukkit.Bukkit
 import org.bukkit.entity.Entity
@@ -23,7 +22,6 @@ import java.util.regex.Pattern
 
 class Reflections {
     private val gson = Gson()
-    private val jsonParser = JsonParser()
     private val version: String = Bukkit.getServer().javaClass.getPackage().name.replace(".", ",").split(",").toTypedArray()[3] + "."
     private val CraftEntity: Class<*> = getBukkitClass("entity.CraftEntity")
     private val CraftLivingEntity: Class<*> = getBukkitClass("entity.CraftLivingEntity")

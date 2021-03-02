@@ -4,9 +4,6 @@ import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.isQuestChest
 import io.github.secretx33.chestquest.utils.message
 import org.bukkit.Bukkit
-import org.bukkit.Material
-import org.bukkit.block.Block
-import org.bukkit.block.Chest
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener

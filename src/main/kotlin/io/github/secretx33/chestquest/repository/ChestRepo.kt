@@ -1,6 +1,6 @@
 package io.github.secretx33.chestquest.repository
 
-import io.github.secretx33.chestquest.database.Database
+import io.github.secretx33.chestquest.database.SQLite
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.clone
 import kotlinx.coroutines.*
@@ -14,17 +14,22 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 @KoinApiExtension
-class ChestRepo(private val db: Database) {
+class ChestRepo(private val db: SQLite) {
 
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val questChests: MutableSet<Location> = ConcurrentHashMap.newKeySet()
 
     init {
         loadDataFromDB()
-        alwaysRun()
+        periodicCleanup()
     }
 
-    private fun alwaysRun() = CoroutineScope(Dispatchers.Default).launch {
+    private fun loadDataFromDB() = CoroutineScope(Dispatchers.IO).launch {
+        chestContents.putAll(db.getAllChestContentsAsync().await())
+        questChests.addAll(db.getAllQuestChestsAsync().await())
+    }
+
+    private fun periodicCleanup() = CoroutineScope(Dispatchers.Default).launch {
         while(true){
             delay(1000 * 60 * 1)
             GlobalScope.launch {
@@ -35,11 +40,6 @@ class ChestRepo(private val db: Database) {
         }
     }
 
-    private fun loadDataFromDB() = CoroutineScope(Dispatchers.IO).launch {
-        chestContents.putAll(db.getAllChestContents().await())
-        questChests.addAll(db.getAllQuestChests().await())
-    }
-
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
         return chestContents.getOrPut(key) {
@@ -47,11 +47,20 @@ class ChestRepo(private val db: Database) {
         }
     }
 
+    fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
+        chestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> chestContents.remove(key) }
+    }
+
+    fun updateInventory(playerUuid: UUID, inv: Inventory) = db.updateInventory(inv.location, playerUuid, inv)
+
+    fun isChestInventory(inv: Inventory): Boolean = chestContents.containsValue(inv)
+
     fun isQuestChest(location: Location): Boolean = questChests.contains(location)
 
-    fun addQuestChest(location: Location) = questChests.add(location)
-
-    fun replaceQuestChests(locations: Collection<Location>)= questChests.addAll(locations)
+    fun addQuestChest(location: Location) {
+        questChests.add(location)
+        db.addQuestChest(location)
+    }
 
     fun removeQuestChest(location: Location) = CoroutineScope(Dispatchers.Default).launch {
         questChests.remove(location)

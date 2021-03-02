@@ -1,9 +1,7 @@
 package io.github.secretx33.chestquest.database
 
 import com.google.gson.*
-import io.github.secretx33.chestquest.utils.Utils
 import io.github.secretx33.chestquest.utils.Utils.reflections
-import io.github.secretx33.chestquest.utils.clone
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.event.inventory.InventoryType
@@ -15,7 +13,7 @@ import java.lang.reflect.Type
 class LocationSerializer : JsonSerializer<Location>, JsonDeserializer<Location> {
 
     override fun serialize(src: Location?, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement {
-        if(src == null) return JsonPrimitive("")
+        if(src == null) throw NullPointerException("null json object cannot be converted to Location")
         return JsonObject().apply {
             addProperty("world", src.world.uid.toString())
             addProperty("x", src.x.toInt())
@@ -52,8 +50,7 @@ class InventorySerializer : JsonSerializer<Inventory>, JsonDeserializer<Inventor
 
     override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): Inventory {
         if(json == null) throw NullPointerException("null json object cannot be converted to Inventory")
-        json as JsonObject
-        json.run {
+        (json as JsonObject).run {
             val inv = Bukkit.createInventory(null, InventoryType.values()[get("type").asInt])
             repeat(inv.size) { index ->
                 get(index.toString())?.let { inv.setItem(index, reflections.deserializeItem(it.asString)) }

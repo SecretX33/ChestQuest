@@ -1,11 +1,9 @@
 package io.github.secretx33.chestquest.events
 
-import io.github.secretx33.chestquest.config.Const.PLUGIN_PERMISSION_PREFIX
 import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.canEditQC
 import io.github.secretx33.chestquest.utils.canOpenQC
-import io.github.secretx33.chestquest.utils.clone
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.Chest
@@ -31,12 +29,12 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listene
 
         if(!player.canOpenQC()) {
             event.isCancelled = true
-            event.player.openInventory(Bukkit.createInventory(null, chest.inventory.size))
+            player.openInventory(Bukkit.createInventory(null, chest.inventory.size))
             debugMessage("Player ${player.name} doesn't have permission to open any Quest Chest, displaying an empty chest to him")
         } else if(!player.canEditQC()) {
             event.isCancelled = true
             val inventory = chestRepo.getChestContent(chest, player)
-            event.player.openInventory(inventory)
+            player.openInventory(inventory)
             debugMessage("Altered interaction with chest")
         }
     }
