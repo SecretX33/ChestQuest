@@ -43,6 +43,8 @@ dependencies {
     val koin_version = "2.2.2"
     implementation("org.koin:koin-core:$koin_version")
     testCompileOnly("org.koin:koin-test:$koin_version")
+    implementation("org.xerial:sqlite-jdbc:3.34.0")
+    implementation("com.zaxxer:HikariCP:4.0.2")
 }
 
 // Disables the normal jar task
