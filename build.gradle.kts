@@ -37,9 +37,9 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
     compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT") // Spigot API dependency
     compileOnly(fileTree("libs/*.jar"))      // Spigot server dependency
-//    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+    implementation("com.google.code.gson:gson:2.8.6")
     val koin_version = "2.2.2"
     implementation("org.koin:koin-core:$koin_version")
     testCompileOnly("org.koin:koin-test:$koin_version")
