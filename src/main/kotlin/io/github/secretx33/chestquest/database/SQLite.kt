@@ -1,6 +1,8 @@
 package io.github.secretx33.chestquest.database
 
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.internal.GsonBuildConfig
 import com.google.gson.reflect.TypeToken
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -73,10 +75,13 @@ class SQLite(plugin: Plugin) {
     fun addChestContent(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
+                debugMessage("I think this will be the end")
+                val inv = gson.toJson(inv)
+                debugMessage("Inventory is: $inv")
                 val prep = conn.prepareStatement(INSERT_CHEST_CONTENTS).apply {
                     setString(1, gson.toJson(chestLoc))
                     setString(2, playerUuid.toString())
-                    setString(3, gson.toJson(inv))
+                    setString(3, inv)
                 }
                 prep.execute()
                 conn.commit()
@@ -132,7 +137,9 @@ class SQLite(plugin: Plugin) {
                 }
                 val rs = prep.executeQuery()
                 if(rs.next()){
-                    return gson.fromJson<Inventory>(rs.getString("inventory"), Inventory::class.java)
+                    val item = rs.getString("inventory")
+                    debugMessage("Item from DB is: $item")
+                    return gson.fromJson<Inventory>(item, invTypeToken)
                 }
             }
         } catch (e: SQLException) {
@@ -212,12 +219,12 @@ class SQLite(plugin: Plugin) {
             .registerTypeAdapter(Location::class.java, LocationSerializer())
             .registerTypeAdapter(Inventory::class.java, InventorySerializer())
             .create()
-        val folderSeparator: String = FileSystems.getDefault().separator
-        val hikariConfig = HikariConfig().apply { isAutoCommit = false }
-
         // TypeTokens
         val locTypeToken: Type = object : TypeToken<Location>() {}.type
         val invTypeToken: Type = object : TypeToken<Inventory>() {}.type
+
+        val folderSeparator: String = FileSystems.getDefault().separator
+        val hikariConfig = HikariConfig().apply { isAutoCommit = false }
 
         // create tables
         const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150) PRIMARY KEY);"

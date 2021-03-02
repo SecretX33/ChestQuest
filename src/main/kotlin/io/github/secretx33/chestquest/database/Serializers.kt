@@ -59,5 +59,4 @@ class InventorySerializer : JsonSerializer<Inventory>, JsonDeserializer<Inventor
             return inv
         }
     }
-
 }

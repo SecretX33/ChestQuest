@@ -4,6 +4,7 @@ import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.canEditQC
 import io.github.secretx33.chestquest.utils.canOpenQC
+import io.github.secretx33.chestquest.utils.isChest
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.block.Chest
@@ -40,6 +41,6 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listene
     }
 
     private fun PlayerInteractEvent.isChestQuest(): Boolean {
-        return action == Action.RIGHT_CLICK_BLOCK && clickedBlock?.type == Material.CHEST && chestRepo.isQuestChest(clickedBlock.location)
+        return action == Action.RIGHT_CLICK_BLOCK && clickedBlock?.isChest() == true && chestRepo.isQuestChest(clickedBlock.location)
     }
 }
