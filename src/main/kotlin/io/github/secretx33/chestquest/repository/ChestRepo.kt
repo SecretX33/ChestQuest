@@ -1,5 +1,6 @@
 package io.github.secretx33.chestquest.repository
 
+import io.github.secretx33.chestquest.database.DAO
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.clone
 import org.bukkit.Location
@@ -13,7 +14,7 @@ import java.util.concurrent.Semaphore
 import kotlin.collections.HashSet
 
 @KoinApiExtension
-class ChestRepo {
+class ChestRepo(private val db: DAO) {
 
     private val lock = Semaphore(1, true)
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
@@ -21,7 +22,11 @@ class ChestRepo {
 
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
-        return chestContents.getOrPut(key) { chest.inventory.clone() }
+        return chestContents.getOrPut(key) {
+            val inv = chest.inventory.clone()
+            db.
+            inv
+        }
     }
 
     fun isQuestChest(location: Location): Boolean = runSync { questChests.contains(location) }

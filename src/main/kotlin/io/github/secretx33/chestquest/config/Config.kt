@@ -5,11 +5,12 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import org.koin.core.component.get
 
 @KoinApiExtension
 object Config : KoinComponent {
-    private val plugin: Plugin by inject()
+    private val plugin: Plugin = get()
+    var removeDBEntriesIfWorldIsMissing = true
     var debug: Boolean = false
 
     init { reloadConfig() }
@@ -18,13 +19,17 @@ object Config : KoinComponent {
         val config = plugin.config
         val section = "general"
         var general: ConfigurationSection? = null
-        if (config.isSet(section)) {
+        if(config.isSet(section)) {
             general = config.getConfigurationSection(section)
         }
-        if (general == null) {
+        if(general == null) {
             consoleMessage(String.format(Const.SECTION_NOT_FOUND, section))
             return
         }
-        if (config.isSet("general.debug")) debug = config.getBoolean("general.debug")
+        var field = "automatically-remove-db-entries-from-missing-world"
+        if(config.isSet("$section.field")){
+            removeDBEntriesIfWorldIsMissing = config.getBoolean(field)
+        }
+        if(config.isSet("general.debug")) debug = config.getBoolean("general.debug")
     }
 }
