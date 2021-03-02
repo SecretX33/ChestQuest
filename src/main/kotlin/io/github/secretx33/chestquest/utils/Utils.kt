@@ -38,8 +38,8 @@ import org.koin.core.component.inject
 
 @KoinApiExtension
 object Utils: KoinComponent {
-    private val console: ConsoleCommandSender = get()
-    val chestRepo: ChestRepo = get()
+    private val console: ConsoleCommandSender by inject()
+    val chestRepo: ChestRepo by inject()
     val reflections: Reflections by inject()
 
     fun consoleMessage(msg: String) {
@@ -76,4 +76,7 @@ fun CommandSender.canToggleDebug() = hasPermission("$PLUGIN_PERMISSION_PREFIX.de
 
 fun Block.isChest(): Boolean = type == Material.CHEST
 
+@KoinApiExtension
 fun Block.isQuestChest(): Boolean = isChest() && chestRepo.isQuestChest(location)
+
+fun Block.coordinates(): String = "${location.x.toLong()} ${location.y.toLong()} ${location.z.toLong()}"

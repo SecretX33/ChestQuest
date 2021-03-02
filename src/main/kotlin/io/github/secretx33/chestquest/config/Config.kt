@@ -6,10 +6,11 @@ import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import org.koin.core.component.inject
 
 @KoinApiExtension
 object Config : KoinComponent {
-    private val plugin: Plugin = get()
+    private val plugin: Plugin by inject()
     var removeDBEntriesIfWorldIsMissing = true
     var debug: Boolean = false
 

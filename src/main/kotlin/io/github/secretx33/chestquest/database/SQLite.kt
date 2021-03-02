@@ -8,7 +8,6 @@ import io.github.secretx33.chestquest.config.Config
 import io.github.secretx33.chestquest.utils.Utils.consoleMessage
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import kotlinx.coroutines.*
-import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.inventory.Inventory
@@ -17,16 +16,16 @@ import org.koin.core.component.KoinApiExtension
 import java.lang.reflect.Type
 import java.nio.file.FileSystems
 import java.sql.Connection
-import java.sql.SQLData
 import java.sql.SQLException
 import java.util.*
+import java.util.regex.Pattern
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 @KoinApiExtension
 class SQLite(plugin: Plugin) {
 
-    private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}/database.db"
+    private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}database.db"
     private val ds = HikariDataSource(hikariConfig.apply { jdbcUrl = url })
 
     init {
@@ -105,10 +104,10 @@ class SQLite(plugin: Plugin) {
         }
     }
 
-    private fun removeQuestChests(list: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
+    private fun removeQuestChests(worldUuids: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                list.forEach {
+                worldUuids.forEach {
                     val prep = conn.prepareStatement(REMOVE_CHEST_QUESTS_OF_WORLD).apply {
                         setString(1, it)
                     }
@@ -150,17 +149,15 @@ class SQLite(plugin: Plugin) {
             ds.connection.use { conn: Connection ->
                 val rs = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST).executeQuery()
                 while(rs.next()){
-                    val world = Bukkit.getWorld(UUID.fromString(rs.getString("world")))
-                    if(world != null){
-                        val location = Location(
-                            world,
-                            rs.getInt("x").toDouble(),
-                            rs.getInt("y").toDouble(),
-                            rs.getInt("z").toDouble()
-                        )
-                        set.add(location)
+                    val chestLoc = gson.fromJson<Location>(rs.getString("location"), locTypeToken)
+                    debugMessage("Loaded chest at $chestLoc")
+                    if(chestLoc.world != null){
+                        set.add(chestLoc)
                     } else if (Config.removeDBEntriesIfWorldIsMissing) {
-                        removeSet.add(rs.getString("world"))
+                        debugMessage("Null world detected")
+                        UUID_WORLD_PATTERN.find(rs.getString("location"))?.let {
+                            removeSet.add(it.toString())
+                        }
                     }
                 }
                 if(removeSet.isNotEmpty()){
@@ -210,25 +207,16 @@ class SQLite(plugin: Plugin) {
         }
     }
 
-    private companion object {
-        @JvmStatic
+    companion object {
         val gson = GsonBuilder()
             .registerTypeAdapter(Location::class.java, LocationSerializer())
             .registerTypeAdapter(Inventory::class.java, InventorySerializer())
             .create()
         val folderSeparator: String = FileSystems.getDefault().separator
-        val hikariConfig = HikariConfig().apply {
-            dataSourceClassName = "org.sqlite.SQLiteDataSource"
-            isAutoCommit = false
-//            addDataSourceProperty("cachePrepStmts", "true")
-//            addDataSourceProperty("prepStmtCacheSize", "100")
-//            addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
-        }
+        val hikariConfig = HikariConfig().apply { isAutoCommit = false }
 
         // TypeTokens
-        @JvmStatic
         val locTypeToken: Type = object : TypeToken<Location>() {}.type
-        @JvmStatic
         val invTypeToken: Type = object : TypeToken<Inventory>() {}.type
 
         // create tables
@@ -247,5 +235,7 @@ class SQLite(plugin: Plugin) {
         // removes
         const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE '{"world":"?%';""" // change this later
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
+
+        val UUID_WORLD_PATTERN: Regex = Pattern.compile("""^\{"world":"([0-9a-zA-Z-]+).*""").toRegex()
     }
 }

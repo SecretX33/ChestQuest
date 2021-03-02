@@ -14,12 +14,15 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
 @KoinApiExtension
 class Main : JavaPlugin(), KoinComponent {
+
+    private val db by inject<SQLite>()
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -42,6 +45,6 @@ class Main : JavaPlugin(), KoinComponent {
     }
 
     override fun onDisable() {
-        get<SQLite>().close()
+        db.close()
     }
 }
