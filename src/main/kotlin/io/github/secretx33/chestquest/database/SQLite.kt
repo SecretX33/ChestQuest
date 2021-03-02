@@ -15,6 +15,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
 import java.lang.reflect.Type
+import java.nio.file.FileSystems
 import java.sql.Connection
 import java.sql.SQLData
 import java.sql.SQLException
@@ -25,7 +26,7 @@ import kotlin.collections.HashSet
 @KoinApiExtension
 class SQLite(plugin: Plugin) {
 
-    private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath.replace("\\","/")}/database.db"
+    private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}/database.db"
     private val ds = HikariDataSource(hikariConfig.apply { jdbcUrl = url })
 
     init {
@@ -132,7 +133,7 @@ class SQLite(plugin: Plugin) {
                 }
                 val rs = prep.executeQuery()
                 if(rs.next()){
-                    return gson.fromJson<Inventory>(rs.getString("inventory"), invTypeToken)
+                    return gson.fromJson<Inventory>(rs.getString("inventory"), Inventory::class.java)
                 }
             }
         } catch (e: SQLException) {
@@ -210,11 +211,12 @@ class SQLite(plugin: Plugin) {
     }
 
     private companion object {
+        @JvmStatic
         val gson = GsonBuilder()
             .registerTypeAdapter(Location::class.java, LocationSerializer())
             .registerTypeAdapter(Inventory::class.java, InventorySerializer())
             .create()
-//        val folderSeparator: String = FileSystems.getDefault().separator
+        val folderSeparator: String = FileSystems.getDefault().separator
         val hikariConfig = HikariConfig().apply {
             dataSourceClassName = "org.sqlite.SQLiteDataSource"
             isAutoCommit = false
@@ -224,7 +226,9 @@ class SQLite(plugin: Plugin) {
         }
 
         // TypeTokens
+        @JvmStatic
         val locTypeToken: Type = object : TypeToken<Location>() {}.type
+        @JvmStatic
         val invTypeToken: Type = object : TypeToken<Inventory>() {}.type
 
         // create tables
@@ -234,14 +238,14 @@ class SQLite(plugin: Plugin) {
         // selects
         const val SELECT_ALL_FROM_QUEST_CHEST = "SELECT * FROM questChests;"
         const val SELECT_ALL_FROM_CHEST_CONTENT = "SELECT chest_location, player_uuid, inventory FROM chestContents;"
-        const val SELECT_CHEST_CONTENT = "SELECT inventory FROM chestContents WHERE chest_location = '?' AND player_uuid = '?' LIMIT 1;"
+        const val SELECT_CHEST_CONTENT = "SELECT inventory FROM chestContents WHERE chest_location = ? AND player_uuid = ? LIMIT 1;"
         // inserts
-        const val INSERT_QUEST_CHEST = "INSERT INTO questChests(location) VALUES ('?');"
-        const val INSERT_CHEST_CONTENTS = "INSERT INTO chestContents(chest_location, player_uuid, inventory) VALUES ('?', '?', '?');"
+        const val INSERT_QUEST_CHEST = "INSERT INTO questChests(location) VALUES (?);"
+        const val INSERT_CHEST_CONTENTS = "INSERT INTO chestContents(chest_location, player_uuid, inventory) VALUES (?, ?, ?);"
         // updates
-        const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = '?' WHERE chest_location = '?' AND player_uuid = '?';"
+        const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
         // removes
         const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE '{"world":"?%';""" // change this later
-        const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = '?';"
+        const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
     }
 }

@@ -9,6 +9,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.koin.core.component.KoinApiExtension
 import java.lang.reflect.Type
+import java.util.*
 
 class LocationSerializer : JsonSerializer<Location>, JsonDeserializer<Location> {
 
@@ -24,9 +25,9 @@ class LocationSerializer : JsonSerializer<Location>, JsonDeserializer<Location> 
 
     override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): Location {
         if(json == null) throw NullPointerException("null json object cannot be converted to Location")
-        (json as JsonObject).run {
+        (json.asJsonObject).run {
             return Location(
-                Bukkit.getWorld(get("world").asString),
+                Bukkit.getWorld(UUID.fromString(get("world").asString)),
                 get("x").asDouble,
                 get("y").asDouble,
                 get("z").asDouble,
@@ -50,10 +51,10 @@ class InventorySerializer : JsonSerializer<Inventory>, JsonDeserializer<Inventor
 
     override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): Inventory {
         if(json == null) throw NullPointerException("null json object cannot be converted to Inventory")
-        (json as JsonObject).run {
+        (json.asJsonObject).run {
             val inv = Bukkit.createInventory(null, InventoryType.values()[get("type").asInt])
             repeat(inv.size) { index ->
-                get(index.toString())?.let { inv.setItem(index, reflections.deserializeItem(it.asString)) }
+                get(index.toString())?.asString?.let { inv.setItem(index, reflections.deserializeItem(it)) }
             }
             return inv
         }

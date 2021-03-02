@@ -21,7 +21,7 @@ class ChestRepo(private val db: SQLite) {
 
     init {
         loadDataFromDB()
-        periodicCleanup()
+//        periodicCleanup()
     }
 
     private fun loadDataFromDB() = CoroutineScope(Dispatchers.IO).launch {
@@ -29,7 +29,7 @@ class ChestRepo(private val db: SQLite) {
         questChests.addAll(db.getAllQuestChestsAsync().await())
     }
 
-    private fun periodicCleanup() = CoroutineScope(Dispatchers.Default).launch {
+    /*private fun periodicCleanup() = CoroutineScope(Dispatchers.Default).launch {
         while(true){
             delay(1000 * 60 * 1)
             GlobalScope.launch {
@@ -38,12 +38,21 @@ class ChestRepo(private val db: SQLite) {
                 chestContents.toMap().filterKeys { !onlinePlayers.contains(it.second) }.forEach { (k, _) -> chestContents.remove(k) }
             }
         }
-    }
+    }*/
 
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
         return chestContents.getOrPut(key) {
-            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { db.addChestContent(chest.location, player.uniqueId, it) }
+//            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { db.addChestContent(chest.location, player.uniqueId, it) }
+
+            val dbEntry = db.getChestContent(chest.location, player.uniqueId)
+            if(dbEntry != null){
+                debugMessage("Got inventory of ${player.name} from Database")
+                dbEntry
+            } else {
+                debugMessage("Got inventory of ${player.name} from clone")
+                chest.inventory.clone().also { db.addChestContent(chest.location, player.uniqueId, it) }
+            }
         }
     }
 
