@@ -1,5 +1,6 @@
 package io.github.secretx33.chestquest.database
 
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -51,7 +52,6 @@ class SQLite(plugin: Plugin) {
         try {
             ds.connection.use { conn: Connection ->
                 val temp = jsonLoc.toJson(chestLoc)
-                debugMessage("My Gson is $temp")
                 val prep = conn.prepareStatement(INSERT_QUEST_CHEST).apply {
                     setString(1, temp)
                 }
@@ -67,10 +67,10 @@ class SQLite(plugin: Plugin) {
     fun addChestContent(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val serializedInv = jsonInv.toJson(inv)!!
+                val serializedInv = jsonInv.toJson(inv)
                 debugMessage("Inventory is: $serializedInv")
                 val prep = conn.prepareStatement(INSERT_CHEST_CONTENTS).apply {
-                    setString(1, jsonLoc.toJson(chestLoc)!!)
+                    setString(1, jsonLoc.toJson(chestLoc))
                     setString(2, playerUuid.toString())
                     setString(3, serializedInv)
                 }
@@ -89,7 +89,7 @@ class SQLite(plugin: Plugin) {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(REMOVE_QUEST_CHEST).apply {
-                    setString(1, jsonLoc.toJson(chestLoc)!!)
+                    setString(1, jsonLoc.toJson(chestLoc))
                 }
                 prep.execute()
                 conn.commit()
@@ -123,7 +123,7 @@ class SQLite(plugin: Plugin) {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
-                    setString(1, jsonLoc.toJson(chestLoc)!!)
+                    setString(1, jsonLoc.toJson(chestLoc))
                     setString(2, playerUuid.toString())
                 }
                 val rs = prep.executeQuery()
@@ -155,8 +155,7 @@ class SQLite(plugin: Plugin) {
                         debugMessage("Null world detected")
                         debugMessage(rs.getString("location"))
                         UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
-                            removeSet.add(it)
-                            debugMessage("Added UUID is $it")
+                            if(removeSet.add(it)) debugMessage("Added UUID is $it")
                         }
                     }
                 }
@@ -208,12 +207,12 @@ class SQLite(plugin: Plugin) {
     }
 
     private companion object {
-        val moshi = Moshi.Builder()
+        val moshi: Moshi = Moshi.Builder()
             .add(LocationSerializer())
             .add(InventorySerializer())
             .build()
-        val jsonLoc = moshi.adapter(Location::class.java)
-        val jsonInv = moshi.adapter(Inventory::class.java)
+        val jsonLoc: JsonAdapter<Location> = moshi.adapter(Location::class.java)
+        val jsonInv: JsonAdapter<Inventory> = moshi.adapter(Inventory::class.java)
 
         val folderSeparator: String = FileSystems.getDefault().separator
         val hikariConfig = HikariConfig().apply { isAutoCommit = false }
@@ -235,6 +234,6 @@ class SQLite(plugin: Plugin) {
         const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;""" // change this later
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
 
-        val UUID_WORLD_PATTERN = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
+        val UUID_WORLD_PATTERN: Pattern = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
     }
 }
