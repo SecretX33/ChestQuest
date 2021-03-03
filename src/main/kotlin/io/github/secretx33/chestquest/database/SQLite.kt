@@ -9,6 +9,7 @@ import io.github.secretx33.chestquest.utils.Utils.consoleMessage
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.*
+import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.block.Container
@@ -147,9 +148,13 @@ class SQLite(plugin: Plugin) {
                 }
                 val rs = prep.executeQuery()
                 if(rs.next()){
-                    val inv = rs.getString("inventory")
-                    debugMessage("Inventory from DB is: $inv")
-                    return jsonInv.fromJson(inv)
+                    val inv = jsonInv.fromJson(rs.getString("inventory"))
+                    if(inv == null) {
+                        consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
+                    } else if(inv.holder == null) {
+                        consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                    }
+                    return inv
                 }
             }
         } catch (e: SQLException) {
@@ -174,11 +179,13 @@ class SQLite(plugin: Plugin) {
                         UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
                             if(worldRemoveSet.add(it)) debugMessage("Added UUID is $it")
                         }
-                    } else if(chestLoc.world.getBlockAt(chestLoc) !is Container) {
-                        consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugins being disabled or missing.")
-                        chestRemoveSet.add(chestLoc)
-                    } else {
-                        chestSet.add(chestLoc)
+                    } else if(chestLoc.world != null) {
+                        if (chestLoc.world.getBlockAt(chestLoc) !is Container) {
+                            consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugins being disabled or missing.")
+                            chestRemoveSet.add(chestLoc)
+                        } else {
+                            chestSet.add(chestLoc)
+                        }
                     }
                 }
                 if(worldRemoveSet.isNotEmpty()){
