@@ -1,9 +1,6 @@
 package io.github.secretx33.chestquest.database
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.internal.GsonBuildConfig
-import com.google.gson.reflect.TypeToken
+import com.squareup.moshi.Moshi
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.secretx33.chestquest.config.Config
@@ -15,7 +12,6 @@ import org.bukkit.Location
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
-import java.lang.reflect.Type
 import java.nio.file.FileSystems
 import java.sql.Connection
 import java.sql.SQLException
@@ -30,22 +26,18 @@ class SQLite(plugin: Plugin) {
     private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}database.db"
     private val ds = HikariDataSource(hikariConfig.apply { jdbcUrl = url })
 
-    init {
-        consoleMessage("URL from db is $url")
-        initialize()
-    }
+    init { initialize() }
 
     fun close() = ds.close()
 
     private fun initialize() {
         try {
             ds.connection.use { conn: Connection ->
-                consoleMessage("The driver name is " + conn.metaData.driverName)
                 conn.prepareStatement(CREATE_QUEST_CHESTS).execute()
                 conn.prepareStatement(CREATE_CHEST_CONTENT).execute()
                 conn.prepareStatement(CREATE_TRIGGER).execute()
                 conn.commit()
-                consoleMessage("A new database has been created.")
+                debugMessage("Initiated DB")
             }
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
@@ -58,7 +50,7 @@ class SQLite(plugin: Plugin) {
     fun addQuestChest(chestLoc: Location) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val temp = gson.toJson(chestLoc)
+                val temp = jsonLoc.toJson(chestLoc)
                 debugMessage("My Gson is $temp")
                 val prep = conn.prepareStatement(INSERT_QUEST_CHEST).apply {
                     setString(1, temp)
@@ -76,12 +68,12 @@ class SQLite(plugin: Plugin) {
         try {
             ds.connection.use { conn: Connection ->
                 debugMessage("I think this will be the end")
-                val inv = gson.toJson(inv)
-                debugMessage("Inventory is: $inv")
+                val serializedInv = jsonInv.toJson(inv)!!
+                debugMessage("Inventory is: $serializedInv")
                 val prep = conn.prepareStatement(INSERT_CHEST_CONTENTS).apply {
-                    setString(1, gson.toJson(chestLoc))
+                    setString(1, jsonLoc.toJson(chestLoc)!!)
                     setString(2, playerUuid.toString())
-                    setString(3, inv)
+                    setString(3, serializedInv)
                 }
                 prep.execute()
                 conn.commit()
@@ -98,7 +90,7 @@ class SQLite(plugin: Plugin) {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(REMOVE_QUEST_CHEST).apply {
-                    setString(1, gson.toJson(chestLoc))
+                    setString(1, jsonLoc.toJson(chestLoc)!!)
                 }
                 prep.execute()
                 conn.commit()
@@ -132,14 +124,14 @@ class SQLite(plugin: Plugin) {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
-                    setString(1, gson.toJson(chestLoc))
+                    setString(1, jsonLoc.toJson(chestLoc)!!)
                     setString(2, playerUuid.toString())
                 }
                 val rs = prep.executeQuery()
                 if(rs.next()){
-                    val item = rs.getString("inventory")
-                    debugMessage("Item from DB is: $item")
-                    return gson.fromJson<Inventory>(item, invTypeToken)
+                    val inv = rs.getString("inventory")
+                    debugMessage("Inventory from DB is: $inv")
+                    return jsonInv.fromJson(inv)
                 }
             }
         } catch (e: SQLException) {
@@ -156,7 +148,7 @@ class SQLite(plugin: Plugin) {
             ds.connection.use { conn: Connection ->
                 val rs = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST).executeQuery()
                 while(rs.next()){
-                    val chestLoc = gson.fromJson<Location>(rs.getString("location"), locTypeToken)
+                    val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
                     debugMessage("Loaded chest at $chestLoc")
                     if(chestLoc.world != null){
                         set.add(chestLoc)
@@ -185,8 +177,8 @@ class SQLite(plugin: Plugin) {
             ds.connection.use { conn: Connection ->
                 val rs = conn.prepareStatement(SELECT_ALL_FROM_CHEST_CONTENT).executeQuery()
                 while(rs.next()){
-                    val key = Pair(gson.fromJson<Location>(rs.getString("chest_location"), locTypeToken), UUID.fromString(rs.getString("player_uuid")))
-                    val value = gson.fromJson<Inventory>(rs.getString("inventory"), invTypeToken)
+                    val key = Pair(jsonLoc.fromJson(rs.getString("chest_location"))!!, UUID.fromString(rs.getString("player_uuid")))
+                    val value = jsonInv.fromJson(rs.getString("inventory"))!!
                     map[key] = value
                 }
             }
@@ -197,12 +189,12 @@ class SQLite(plugin: Plugin) {
         map
     }
 
-    fun updateInventory(chestLoc: Location, playerUuid: UUID, inv: Inventory){
+    fun updateInventory(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(UPDATE_CHEST_CONTENTS).apply {
-                    setString(1, gson.toJson(inv))
-                    setString(2, gson.toJson(chestLoc))
+                    setString(1, jsonInv.toJson(inv))
+                    setString(2, jsonLoc.toJson(chestLoc))
                     setString(3, playerUuid.toString())
                 }
                 prep.execute()
@@ -214,14 +206,13 @@ class SQLite(plugin: Plugin) {
         }
     }
 
-    companion object {
-        val gson = GsonBuilder()
-            .registerTypeAdapter(Location::class.java, LocationSerializer())
-            .registerTypeAdapter(Inventory::class.java, InventorySerializer())
-            .create()
-        // TypeTokens
-        val locTypeToken: Type = object : TypeToken<Location>() {}.type
-        val invTypeToken: Type = object : TypeToken<Inventory>() {}.type
+    private companion object {
+        val moshi = Moshi.Builder()
+            .add(LocationSerializer())
+            .add(InventorySerializer())
+            .build()
+        val jsonLoc = moshi.adapter(Location::class.java)
+        val jsonInv = moshi.adapter(Inventory::class.java)
 
         val folderSeparator: String = FileSystems.getDefault().separator
         val hikariConfig = HikariConfig().apply { isAutoCommit = false }

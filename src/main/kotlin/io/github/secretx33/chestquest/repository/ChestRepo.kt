@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Chest
+import org.bukkit.block.Container
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.koin.core.component.KoinApiExtension
@@ -60,7 +61,14 @@ class ChestRepo(private val db: SQLite) {
         chestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> chestContents.remove(key) }
     }
 
-    fun updateInventory(playerUuid: UUID, inv: Inventory) = db.updateInventory(inv.location, playerUuid, inv)
+    fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.IO).launch {
+        var location = (inventory.holder as? Container)?.location
+        if(location == null) {
+            location = chestContents.toMap().filter { (_, inv) -> inv === inventory }.map { (k,_) -> k.first }[0]
+            debugMessage("Localization came from 'transformation on chestContents' and it is $location")
+        }
+        db.updateInventory(location, playerUuid, inventory)
+    }
 
     fun isChestInventory(inv: Inventory): Boolean = chestContents.containsValue(inv)
 

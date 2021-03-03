@@ -33,7 +33,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo)
                                 sender.message("This chest is already a Quest Chest")
                             } else {
                                 chestRepo.addQuestChest(it.location)
-                                sender.message("Marked chest at ${it.location.x.toLong()} ${it.location.y.toLong()} ${it.location.z.toLong()} as a Quest Chest")
+                                sender.message("Marked chest at ${it.coordinates()} as a Quest Chest")
                             }
                         }
                     }
@@ -44,7 +44,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo)
                         sender.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let {
                             if(chestRepo.isQuestChest(it.location)) {
                                 chestRepo.removeQuestChest(it.location)
-                                sender.message("Converted chest at ${it.location.x.toLong()} ${it.location.y.toLong()} ${it.location.z.toLong()} back to a normal chest")
+                                sender.message("Converted chest at ${it.coordinates()}} back to a normal chest")
                             } else {
                                 sender.message("This chest is NOT a Quest Chest")
                             }

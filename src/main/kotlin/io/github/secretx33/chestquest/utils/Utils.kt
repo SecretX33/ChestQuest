@@ -53,7 +53,7 @@ object Utils: KoinComponent {
 
 @KoinApiExtension
 fun Inventory.clone(): Inventory {
-    val cloned = Bukkit.createInventory(null, type)
+    val cloned = Bukkit.createInventory(holder, type)
 
     this.contents.forEachIndexed { slot, item: ItemStack? ->
         item?.let { cloned.setItem(slot, reflections.clone(item)) }

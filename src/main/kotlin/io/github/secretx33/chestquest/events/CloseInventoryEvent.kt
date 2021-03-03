@@ -26,7 +26,7 @@ class CloseInventoryEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Li
         val inv = event.inventory
         val player = event.player
 
-        if(player.canEditQC() && chestRepo.isChestInventory(inv)) {
+        if(player.canOpenQC() && !player.canEditQC() && chestRepo.isChestInventory(inv)) {
             chestRepo.updateInventory(player.uniqueId, inv)
             Utils.debugMessage("Player ${player.name} closed his custom inventory, saving it into DB...")
         }
