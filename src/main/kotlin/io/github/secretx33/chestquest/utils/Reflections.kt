@@ -5,10 +5,6 @@ import com.google.common.base.Preconditions
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.bukkit.Bukkit
-import org.bukkit.entity.Entity
-import org.bukkit.entity.LivingEntity
-import org.bukkit.entity.Player
-import org.bukkit.inventory.EntityEquipment
 import org.bukkit.inventory.ItemStack
 import java.io.*
 import java.lang.reflect.Constructor

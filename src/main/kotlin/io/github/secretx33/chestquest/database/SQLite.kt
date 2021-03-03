@@ -106,7 +106,7 @@ class SQLite(plugin: Plugin) {
             ds.connection.use { conn: Connection ->
                 worldUuids.forEach {
                     val prep = conn.prepareStatement(REMOVE_CHEST_QUESTS_OF_WORLD).apply {
-                        setString(1, it)
+                        setString(1, "%$it%")
                     }
                     prep.execute()
                 }
@@ -154,8 +154,10 @@ class SQLite(plugin: Plugin) {
                         set.add(chestLoc)
                     } else if (Config.removeDBEntriesIfWorldIsMissing) {
                         debugMessage("Null world detected")
-                        UUID_WORLD_PATTERN.find(rs.getString("location"))?.let {
-                            removeSet.add(it.toString())
+                        debugMessage(rs.getString("location"))
+                        UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
+                            removeSet.add(it)
+                            debugMessage("Added UUID is $it")
                         }
                     }
                 }
@@ -231,9 +233,9 @@ class SQLite(plugin: Plugin) {
         // updates
         const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
         // removes
-        const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE '{"world":"?%';""" // change this later
+        const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;""" // change this later
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
 
-        val UUID_WORLD_PATTERN: Regex = Pattern.compile("""^\{"world":"([0-9a-zA-Z-]+).*""").toRegex()
+        val UUID_WORLD_PATTERN = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
     }
 }

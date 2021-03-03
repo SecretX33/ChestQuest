@@ -3,8 +3,9 @@ package io.github.secretx33.chestquest.repository
 import io.github.secretx33.chestquest.database.SQLite
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.clone
-import kotlinx.coroutines.*
-import org.bukkit.Bukkit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.bukkit.Location
 import org.bukkit.block.Chest
 import org.bukkit.block.Container
@@ -26,7 +27,6 @@ class ChestRepo(private val db: SQLite) {
     }
 
     private fun loadDataFromDB() = CoroutineScope(Dispatchers.IO).launch {
-        chestContents.putAll(db.getAllChestContentsAsync().await())
         questChests.addAll(db.getAllQuestChestsAsync().await())
     }
 
