@@ -2,6 +2,7 @@ package io.github.secretx33.chestquest.events
 
 import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.Utils
+import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.canEditQC
 import io.github.secretx33.chestquest.utils.canOpenQC
 import org.bukkit.Bukkit
@@ -20,10 +21,7 @@ class PlayerLogoutEvent (plugin: Plugin, private val chestRepo: ChestRepo) : Lis
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private fun onInventoryClose(event: PlayerQuitEvent) {
         val player = event.player
-
-        if(player.canOpenQC() || player.canEditQC()) {
-            chestRepo.removeEntriesOf(player.uniqueId)
-            Utils.debugMessage("Player ${player.name} logged off, removing his entries from memory.")
-        }
+        chestRepo.removeEntriesOf(player.uniqueId)
+        debugMessage("Player ${player.name} logged off, removing his entries from memory.")
     }
 }

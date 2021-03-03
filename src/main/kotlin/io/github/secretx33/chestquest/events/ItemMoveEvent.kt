@@ -18,11 +18,14 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
     init { Bukkit.getPluginManager().registerEvents(this, plugin) }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    private fun onItemMove(event: InventoryDragEvent){
+    private fun onItemDrag(event: InventoryDragEvent){
         debugMessage("0. Who clicked is ${event.whoClicked.name}, inventory type is ${event.inventory.type}")
 
         val inv = event.inventory
-        if(inv.isChest() && chestRepo.isVirtualInventory(inv)){
+        val topInvSize = event.view.topInventory.size
+        val editingTopInv = event.rawSlots.toSet().any { it < topInvSize }
+
+        if(editingTopInv && inv.isChest() && chestRepo.isVirtualInventory(inv)){
             event.isCancelled = true
             debugMessage("0. Canceled DragEvent")
         }
@@ -30,6 +33,7 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private fun onItemMove(event: InventoryClickEvent) {
+        if(event.clickedInventory == null) return
         debugMessage("2. ${event.whoClicked.name} clicked on [${event.action?.name}] CI ${event.clickedInventory?.type?.name} (I ${event.inventory?.type?.name}) at ${event.clickedInventory?.location != null}")
         if (event.isPickAction()) debugMessage("3. Is pickup")
         if (event.isPutAction()) debugMessage("3. Is put action")
@@ -43,11 +47,11 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private fun onItemClickMonitor(event: InventoryClickEvent) {
-        val inv = event.inventory
+        val inv = event.inventory ?: return
         val player = event.whoClicked as Player
 
-        if(event.isPickAction() && inv.isChest() && chestRepo.isChestInventory(inv)){
-            debugMessage("5. Registered pickup actions, saving to prevent exploits")
+        if((event.isPickAction() || event.isSwapInside()) && inv.isChest() && chestRepo.isChestInventory(inv)){
+            debugMessage("5. Registered pickup/swap actions, saving to prevent exploits")
             chestRepo.updateInventory(player.uniqueId, inv)
         }
     }
@@ -62,6 +66,9 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
 
         return false
     }
+
+    private fun InventoryClickEvent.isSwapInside(): Boolean = action == InventoryAction.SWAP_WITH_CURSOR && clickedInventory.type != InventoryType.PLAYER && inventory.type != InventoryType.PLAYER
+
 
     private fun InventoryClickEvent.isPutAction(): Boolean {
         // shift click on item in player inventory

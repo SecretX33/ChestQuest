@@ -22,7 +22,7 @@ permissions:
       cq.debug: true
   cq.open:
     description: Allows a player to open a "quest" chest
-    default: op
+    default: true
   cq.edit:
     description: Allows a player to create, lock, unlock and edit "quest" chests
     default: op

@@ -6,6 +6,7 @@ import io.github.secretx33.chestquest.utils.clone
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Chest
 import org.bukkit.block.Container
@@ -26,7 +27,7 @@ class ChestRepo(private val db: SQLite) {
         loadDataFromDB()
     }
 
-    private fun loadDataFromDB() = CoroutineScope(Dispatchers.IO).launch {
+    private fun loadDataFromDB() = CoroutineScope(Dispatchers.Default).launch {
         questChests.addAll(db.getAllQuestChestsAsync().await())
     }
 
@@ -48,9 +49,9 @@ class ChestRepo(private val db: SQLite) {
 
     fun getTempChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
-        return chestContents.getOrPut(key) {
+        return tempChestContents.getOrPut(key) {
             debugMessage("Cloned inventory for player that cannot edit chests")
-            chest.inventory.clone()
+            Bukkit.createInventory(chest.inventory.holder, chest.inventory.size)
         }
     }
 
@@ -59,12 +60,17 @@ class ChestRepo(private val db: SQLite) {
         tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
     }
 
-    fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.IO).launch {
+    fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.Default).launch {
         var location = inventory.location ?: (inventory.holder as? Container)?.location
         if(location == null) {
             val list = chestContents.toMap().filter { (_, inv) -> inv === inventory }.map { (k,_) -> k.first }
-            location = list[0]
-            debugMessage("Localization came from 'transformation on chestContents' and it is $location")
+            if(list.isNotEmpty()){
+                debugMessage("Localization came from 'transformation on chestContents' and it is $location")
+                location = list[0]
+            } else{
+                debugMessage("WARNING: Could not infer location of inventory not even from chestContents, inventory was NOT saved")
+                return@launch
+            }
         }
         db.updateInventory(location, playerUuid, inventory)
     }
