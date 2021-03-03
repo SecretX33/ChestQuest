@@ -59,8 +59,8 @@ fun Inventory.clone(): Inventory {
     this.contents.forEachIndexed { slot, item: ItemStack? ->
         item?.let { cloned.setItem(slot, reflections.clone(item)) }
     }
-    debugMessage("Original location is $location")
-    debugMessage("Cloned location is  is of type ${cloned.location}")
+    if(location == null) debugMessage("Original location is NULL")
+    if(cloned.location == null) debugMessage("Cloned location is NULL")
     return cloned
 }
 

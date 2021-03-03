@@ -34,8 +34,7 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listene
             debugMessage("Player ${player.name} doesn't have permission to open any Quest Chest, displaying an empty chest to him")
         } else if(!player.canEditQC()) {
             event.isCancelled = true
-            val inventory = chestRepo.getChestContent(chest, player)
-            player.openInventory(inventory)
+            player.openInventory(chestRepo.getChestContent(chest, player))
             debugMessage("Altered interaction with chest")
         }
     }

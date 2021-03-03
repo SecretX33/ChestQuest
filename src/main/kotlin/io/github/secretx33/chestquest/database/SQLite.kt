@@ -231,7 +231,7 @@ class SQLite(plugin: Plugin) {
         // updates
         const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
         // removes
-        const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;""" // change this later
+        const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;"""
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
 
         val UUID_WORLD_PATTERN: Pattern = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")

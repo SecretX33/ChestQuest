@@ -23,9 +23,7 @@ class ChestRepo(private val db: SQLite) {
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val questChests: MutableSet<Location> = ConcurrentHashMap.newKeySet()
 
-    init {
-        loadDataFromDB()
-    }
+    init { loadDataFromDB() }
 
     private fun loadDataFromDB() = CoroutineScope(Dispatchers.Default).launch {
         questChests.addAll(db.getAllQuestChestsAsync().await())

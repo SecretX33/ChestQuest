@@ -26,7 +26,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo)
             }
             when (strings[0]) {
                 "mark" -> if (sender.canEditQC()) {
-                    if(sender !is Player) sender.sendMessage("You may only use this command ingame")
+                    if(sender !is Player) sender.sendMessage("You may only use this command in-game")
                     else {
                         sender.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let {
                             if(chestRepo.isQuestChest(it.location)) {

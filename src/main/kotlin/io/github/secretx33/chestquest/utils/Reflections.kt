@@ -110,14 +110,6 @@ class Reflections {
         }
     }
 
-    @KoinApiExtension
-    fun setLocationOnInventory(/*location: Location, */inventory: Inventory) {
-//        net.minecraft.server.v1
-
-        val inventory = inventory::class.java.field("inventory").get(inventory)
-        debugMessage("InventoryClass is ${inventory.javaClass.name}")
-    }
-
     private fun getNBTTagFromInputStream(inputStream: InputStream): Any? {
         try {
             val readTag_NBTCompStreamTools = NBTCompressedStreamTools.method("a", InputStream::class.java)
