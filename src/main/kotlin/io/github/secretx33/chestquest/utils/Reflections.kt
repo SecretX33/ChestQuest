@@ -4,8 +4,12 @@ import com.google.common.base.Objects
 import com.google.common.base.Preconditions
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
+import org.koin.core.component.KoinApiExtension
 import java.io.*
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
@@ -24,6 +28,8 @@ class Reflections {
     private val NMS_ItemStack: Class<*> = getNMSClass("ItemStack")
     private val NBTTagCompound: Class<*> = getNMSClass("NBTTagCompound")
     private val NBTCompressedStreamTools: Class<*> = getNMSClass("NBTCompressedStreamTools")
+    private val IInventory: Class<*> = getNMSClass("IInventory")
+    private val TileEntityChest: Class<*> = getNMSClass("TileEntityChest")
 
     private fun getBukkitClass(bukkitClassString: String): Class<*> {
         val name = "org.bukkit.craftbukkit.$version$bukkitClassString"
@@ -102,6 +108,14 @@ class Reflections {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    @KoinApiExtension
+    fun setLocationOnInventory(/*location: Location, */inventory: Inventory) {
+//        net.minecraft.server.v1
+
+        val inventory = inventory::class.java.field("inventory").get(inventory)
+        debugMessage("InventoryClass is ${inventory.javaClass.name}")
     }
 
     private fun getNBTTagFromInputStream(inputStream: InputStream): Any? {

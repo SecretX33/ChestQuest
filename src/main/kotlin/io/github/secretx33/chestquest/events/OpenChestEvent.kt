@@ -11,6 +11,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
+import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
@@ -29,7 +30,7 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listene
 
         if(!player.canOpenQC()) {
             event.isCancelled = true
-            player.openInventory(Bukkit.createInventory(null, chest.inventory.size))
+            player.openInventory(chestRepo.getTempChestContent(chest, player))
             debugMessage("Player ${player.name} doesn't have permission to open any Quest Chest, displaying an empty chest to him")
         } else if(!player.canEditQC()) {
             event.isCancelled = true

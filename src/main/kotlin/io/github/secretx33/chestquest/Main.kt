@@ -2,10 +2,7 @@ package io.github.secretx33.chestquest
 
 import io.github.secretx33.chestquest.commands.Commands
 import io.github.secretx33.chestquest.database.SQLite
-import io.github.secretx33.chestquest.events.BreakChestEvent
-import io.github.secretx33.chestquest.events.CloseInventoryEvent
-import io.github.secretx33.chestquest.events.OpenChestEvent
-import io.github.secretx33.chestquest.events.PlayerLogoutEvent
+import io.github.secretx33.chestquest.events.*
 import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.Reflections
 import io.github.secretx33.chestquest.utils.Utils.consoleMessage
@@ -39,6 +36,7 @@ class Main : JavaPlugin(), KoinComponent {
         val commands = Commands(get(), get())
         val breakChestEvent = BreakChestEvent(get(), get())
         val closeInvEvent = CloseInventoryEvent(get(), get())
+        val itemMoveEvent = ItemMoveEvent(get(), get())
         val openChestEvent = OpenChestEvent(get(), get())
         val playerLogoutEvent = PlayerLogoutEvent(get(), get())
         consoleMessage("loaded")

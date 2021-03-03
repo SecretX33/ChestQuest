@@ -14,7 +14,7 @@ commands:
 
 permissions:
   cq.*:
-    description: Gives access to all @name@ commands
+    description: Gives access to all ${name} commands
     children:
       cq.open: true
       cq.edit: true
@@ -22,7 +22,7 @@ permissions:
       cq.debug: true
   cq.open:
     description: Allows a player to open a "quest" chest
-    default: true
+    default: op
   cq.edit:
     description: Allows a player to create, lock, unlock and edit "quest" chests
     default: op

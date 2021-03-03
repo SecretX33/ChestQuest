@@ -21,6 +21,7 @@ import io.github.secretx33.chestquest.config.Const.PLUGIN_CHAT_PREFIX
 import io.github.secretx33.chestquest.config.Const.PLUGIN_PERMISSION_PREFIX
 import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.Utils.chestRepo
+import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.Utils.reflections
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -29,6 +30,7 @@ import org.bukkit.block.Chest
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.koin.core.component.KoinApiExtension
@@ -57,6 +59,8 @@ fun Inventory.clone(): Inventory {
     this.contents.forEachIndexed { slot, item: ItemStack? ->
         item?.let { cloned.setItem(slot, reflections.clone(item)) }
     }
+    debugMessage("Original location is $location")
+    debugMessage("Cloned location is  is of type ${cloned.location}")
     return cloned
 }
 
@@ -72,6 +76,8 @@ fun CommandSender.canEditQC() = hasPermission("$PLUGIN_PERMISSION_PREFIX.edit")
 fun CommandSender.canReload() = hasPermission("$PLUGIN_PERMISSION_PREFIX.reload")
 
 fun CommandSender.canToggleDebug() = hasPermission("$PLUGIN_PERMISSION_PREFIX.debug")
+
+fun Inventory.isChest(): Boolean = type == InventoryType.CHEST
 
 fun Block.isChest(): Boolean = type == Material.CHEST
 

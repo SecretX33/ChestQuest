@@ -67,7 +67,6 @@ class SQLite(plugin: Plugin) {
     fun addChestContent(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                debugMessage("I think this will be the end")
                 val serializedInv = jsonInv.toJson(inv)!!
                 debugMessage("Inventory is: $serializedInv")
                 val prep = conn.prepareStatement(INSERT_CHEST_CONTENTS).apply {

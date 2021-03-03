@@ -18,28 +18,17 @@ import java.util.concurrent.ConcurrentHashMap
 @KoinApiExtension
 class ChestRepo(private val db: SQLite) {
 
+    private val tempChestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val questChests: MutableSet<Location> = ConcurrentHashMap.newKeySet()
 
     init {
         loadDataFromDB()
-//        periodicCleanup()
     }
 
     private fun loadDataFromDB() = CoroutineScope(Dispatchers.IO).launch {
         questChests.addAll(db.getAllQuestChestsAsync().await())
     }
-
-    /*private fun periodicCleanup() = CoroutineScope(Dispatchers.Default).launch {
-        while(true){
-            delay(1000 * 60 * 1)
-            GlobalScope.launch {
-                debugMessage("[ChestRepo] Cleaned up inventory of offline players")
-                val onlinePlayers = Bukkit.getOnlinePlayers().toList().map { it.uniqueId }
-                chestContents.toMap().filterKeys { !onlinePlayers.contains(it.second) }.forEach { (k, _) -> chestContents.remove(k) }
-            }
-        }
-    }*/
 
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
@@ -51,26 +40,40 @@ class ChestRepo(private val db: SQLite) {
                 debugMessage("Got inventory of ${player.name} from Database")
                 dbEntry
             } else {
-                debugMessage("Got inventory of ${player.name} from clone")
+                debugMessage("Got inventory of ${player.name} from Clone")
                 chest.inventory.clone().also { db.addChestContent(chest.location, player.uniqueId, it) }
             }
         }
     }
 
+    fun getTempChestContent(chest: Chest, player: Player): Inventory {
+        val key = Pair(chest.location, player.uniqueId)
+        return chestContents.getOrPut(key) {
+            debugMessage("Cloned inventory for player that cannot edit chests")
+            chest.inventory.clone()
+        }
+    }
+
     fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
         chestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> chestContents.remove(key) }
+        tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
     }
 
     fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.IO).launch {
-        var location = (inventory.holder as? Container)?.location
+        var location = inventory.location ?: (inventory.holder as? Container)?.location
         if(location == null) {
-            location = chestContents.toMap().filter { (_, inv) -> inv === inventory }.map { (k,_) -> k.first }[0]
+            val list = chestContents.toMap().filter { (_, inv) -> inv === inventory }.map { (k,_) -> k.first }
+            location = list[0]
             debugMessage("Localization came from 'transformation on chestContents' and it is $location")
         }
         db.updateInventory(location, playerUuid, inventory)
     }
 
     fun isChestInventory(inv: Inventory): Boolean = chestContents.containsValue(inv)
+
+    fun isTempChestInventory(inv: Inventory): Boolean = tempChestContents.containsValue(inv)
+
+    fun isVirtualInventory(inv: Inventory): Boolean = isTempChestInventory(inv) || isChestInventory(inv)
 
     fun isQuestChest(location: Location): Boolean = questChests.contains(location)
 
