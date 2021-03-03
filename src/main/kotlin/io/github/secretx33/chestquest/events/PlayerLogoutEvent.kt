@@ -1,10 +1,7 @@
 package io.github.secretx33.chestquest.events
 
 import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.utils.Utils
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
-import io.github.secretx33.chestquest.utils.canEditQC
-import io.github.secretx33.chestquest.utils.canOpenQC
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority

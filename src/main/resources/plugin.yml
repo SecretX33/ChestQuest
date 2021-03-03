@@ -7,14 +7,15 @@ description: Makes chests unique to each player.
 website: https://github.com/SecretX33
 
 commands:
-  cq:
+  chestquest:
     description: ${name}
     usage: /<command>
-    aliases: [chestq, chestquest]
+    aliases: [chestq, cq]
 
 permissions:
   cq.*:
-    description: Gives access to all ${name} commands
+    description: Gives access to all ${name} commands. Default to players with op.
+    default: op
     children:
       cq.open: true
       cq.edit: true
@@ -25,10 +26,10 @@ permissions:
     default: true
   cq.edit:
     description: Allows a player to create, lock, unlock and edit "quest" chests
-    default: op
+    default: false
   cq.reload:
     description: Allows a player to reload the plugin config
-    default: op
+    default: false
   cq.debug:
     description: Allows a player to toggle debug mode (for developers only)
-    default: op
+    default: false

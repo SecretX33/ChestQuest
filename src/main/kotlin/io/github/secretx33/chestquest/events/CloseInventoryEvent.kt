@@ -4,6 +4,7 @@ import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.Utils
 import io.github.secretx33.chestquest.utils.canEditQC
 import io.github.secretx33.chestquest.utils.canOpenQC
+import io.github.secretx33.chestquest.utils.locationByAllMeans
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -22,7 +23,9 @@ class CloseInventoryEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Li
         val inv = event.inventory
         val player = event.player
 
-        if(player.canOpenQC() && !player.canEditQC() && chestRepo.isChestInventory(inv)) {
+        if(!player.canOpenQC()) {
+            chestRepo.removeTempChestContent(player.uniqueId, chestLoc = inv.locationByAllMeans())
+        } else if(!player.canEditQC() && chestRepo.isChestInventory(inv)) {
             chestRepo.updateInventory(player.uniqueId, inv)
             Utils.debugMessage("Player ${player.name} closed his custom inventory, saving it into DB...")
         }

@@ -7,9 +7,11 @@ import com.zaxxer.hikari.HikariDataSource
 import io.github.secretx33.chestquest.config.Config
 import io.github.secretx33.chestquest.utils.Utils.consoleMessage
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
+import io.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.*
 import org.bukkit.ChatColor
 import org.bukkit.Location
+import org.bukkit.block.Container
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
@@ -100,12 +102,29 @@ class SQLite(plugin: Plugin) {
         }
     }
 
-    private fun removeQuestChests(worldUuids: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
+    private fun removeQuestChestsByWorldUuid(worldUuids: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
                 worldUuids.forEach {
-                    val prep = conn.prepareStatement(REMOVE_CHEST_QUESTS_OF_WORLD).apply {
+                    val prep = conn.prepareStatement(REMOVE_QUEST_CHESTS_OF_WORLD).apply {
                         setString(1, "%$it%")
+                    }
+                    prep.execute()
+                }
+                conn.commit()
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            e.printStackTrace()
+        }
+    }
+
+    private fun removeQuestChestsByLocation(locations: Iterable<Location>) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            ds.connection.use { conn: Connection ->
+                locations.forEach { loc ->
+                    val prep = conn.prepareStatement(REMOVE_QUEST_CHEST).apply {
+                        setString(1, jsonLoc.toJson(loc))
                     }
                     prep.execute()
                 }
@@ -141,34 +160,39 @@ class SQLite(plugin: Plugin) {
     }
 
     fun getAllQuestChestsAsync(): Deferred<Set<Location>> = CoroutineScope(Dispatchers.IO).async {
-        val set = HashSet<Location>()
-        val removeSet = HashSet<String>()
+        val chestSet = HashSet<Location>()
+        val worldRemoveSet = HashSet<String>()
+        val chestRemoveSet = HashSet<Location>()
         try {
             ds.connection.use { conn: Connection ->
                 val rs = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST).executeQuery()
                 while(rs.next()){
                     val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
                     debugMessage("Loaded chest at $chestLoc")
-                    if(chestLoc.world != null){
-                        set.add(chestLoc)
-                    } else if (Config.removeDBEntriesIfWorldIsMissing) {
-                        debugMessage("Null world detected")
-                        debugMessage(rs.getString("location"))
+                    if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
+                        debugMessage("Null world detected: ${rs.getString("location")} wasn't found")
                         UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
-                            if(removeSet.add(it)) debugMessage("Added UUID is $it")
+                            if(worldRemoveSet.add(it)) debugMessage("Added UUID is $it")
                         }
+                    } else if(chestLoc.world.getBlockAt(chestLoc) !is Container) {
+                        consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugins being disabled or missing.")
+                        chestRemoveSet.add(chestLoc)
+                    } else {
+                        chestSet.add(chestLoc)
                     }
                 }
-                if(removeSet.isNotEmpty()){
-                    removeSet.forEach { consoleMessage("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
-                    removeQuestChests(removeSet)
+                if(worldRemoveSet.isNotEmpty()){
+                    worldRemoveSet.forEach { consoleMessage("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
+                    removeQuestChestsByWorldUuid(worldRemoveSet)
                 }
+                if(chestRemoveSet.isNotEmpty())
+                    removeQuestChestsByLocation(chestRemoveSet)
             }
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
             e.printStackTrace()
         }
-        set
+        chestSet
     }
 
     fun getAllChestContentsAsync(): Deferred<Map<Pair<Location, UUID>, Inventory>> = CoroutineScope(Dispatchers.IO).async {
@@ -219,7 +243,7 @@ class SQLite(plugin: Plugin) {
 
         // create tables
         const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150) PRIMARY KEY);"
-        const val CREATE_CHEST_CONTENT = "CREATE TABLE IF NOT EXISTS chestContents(id INTEGER PRIMARY KEY, chest_location INTEGER NOT NULL, player_uuid VARCHAR(50) NOT NULL, inventory VARCHAR(20000) NOT NULL, FOREIGN KEY(chest_location) REFERENCES questChests(location));"
+        const val CREATE_CHEST_CONTENT = "CREATE TABLE IF NOT EXISTS chestContents(id INTEGER PRIMARY KEY, chest_location INTEGER NOT NULL, player_uuid VARCHAR(60) NOT NULL, inventory VARCHAR(500000) NOT NULL, FOREIGN KEY(chest_location) REFERENCES questChests(location));"
         const val CREATE_TRIGGER = "CREATE TRIGGER IF NOT EXISTS removeInventories BEFORE DELETE ON questChests FOR EACH ROW BEGIN DELETE FROM chestContents WHERE chestContents.chest_location = OLD.location; END"
         // selects
         const val SELECT_ALL_FROM_QUEST_CHEST = "SELECT * FROM questChests;"
@@ -231,7 +255,7 @@ class SQLite(plugin: Plugin) {
         // updates
         const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
         // removes
-        const val REMOVE_CHEST_QUESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;"""
+        const val REMOVE_QUEST_CHESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;"""
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
 
         val UUID_WORLD_PATTERN: Pattern = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
