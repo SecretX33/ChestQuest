@@ -54,7 +54,7 @@ class InventorySerializer : JsonSerializer<Inventory>, JsonDeserializer<Inventor
         (json.asJsonObject).run {
             val inv = Bukkit.createInventory(null, InventoryType.values()[get("type").asInt])
             repeat(inv.size) { index ->
-                get(index.toString())?.asString?.let { inv.setItem(index, reflections.deserializeItem(it)) }
+                get(index.toString())?.let { inv.setItem(index, reflections.deserializeItem(it.asString)) }
             }
             return inv
         }

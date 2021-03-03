@@ -23,15 +23,9 @@ import java.util.regex.Pattern
 class Reflections {
     private val gson = Gson()
     private val version: String = Bukkit.getServer().javaClass.getPackage().name.replace(".", ",").split(",").toTypedArray()[3] + "."
-    private val CraftEntity: Class<*> = getBukkitClass("entity.CraftEntity")
-    private val CraftLivingEntity: Class<*> = getBukkitClass("entity.CraftLivingEntity")
-    private val CraftEntityEquipment: Class<*> = getBukkitClass("inventory.CraftEntityEquipment")
     private val CraftItemStack: Class<*> = getBukkitClass("inventory.CraftItemStack")
     private val NMS_Entity: Class<*> = getNMSClass("Entity")
     private val NMS_ItemStack: Class<*> = getNMSClass("ItemStack")
-    private val NMS_Block: Class<*> = getNMSClass("Block")
-    private val NMS_Blocks: Class<*> = getNMSClass("Blocks")
-    private val NBTBase: Class<*> = getNMSClass("NBTBase")
     private val NBTTagCompound: Class<*> = getNMSClass("NBTTagCompound")
     private val NBTCompressedStreamTools: Class<*> = getNMSClass("NBTCompressedStreamTools")
 
@@ -77,15 +71,6 @@ class Reflections {
                 isAccessible = true
             }
         }
-    }
-
-    fun getNMSEntity(entity: Entity): Any? {
-        try {
-            return CraftEntity.cast(entity).javaClass.method("getHandle").invoke(entity)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
     }
 
     fun getCraftItemStack(stack: ItemStack): Any? {
@@ -154,92 +139,15 @@ class Reflections {
         return Any()
     }
 
-    fun getNBTTag(entity: Entity): Any {
-        try {
-            var NBTTag = NBTTagCompound.newInstance()
-            val nmsEntity = getNMSEntity(entity)
-            val save_nmsEntity = NMS_Entity.getMethod("save", NBTTagCompound)
-            NBTTag = save_nmsEntity.invoke(nmsEntity, NBTTag)
-            return NBTTag
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return Any()
-    }
-
-    fun serializeEntityNBTTag(entity: Entity): String {
-        val outputStream = ByteArrayOutputStream()
-        try {
-            val NBTTag = getNBTTag(entity)
-            NBTCompressedStreamTools.method("a", NBTTagCompound, OutputStream::class.java).invoke(
-                NBTCompressedStreamTools, NBTTag, outputStream)
-            val serializedNBTTag = gson.toJson(outputStream.toByteArray())
-            if (serializedNBTTag != null) return serializedNBTTag
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-
-    fun deserializeNBTTag(stringNBTTag: String?): Any {
+    fun deserializeNBTTag(stringNBTTag: String): Any {
         val inputStream = ByteArrayInputStream(gson.fromJson(stringNBTTag, object : TypeToken<ByteArray>() {}.type))
         try {
-            val NBTTag = NBTCompressedStreamTools.getDeclaredMethod("a", InputStream::class.java).invoke(
-                NBTCompressedStreamTools, inputStream)
+            val NBTTag = NBTCompressedStreamTools.getDeclaredMethod("a", InputStream::class.java).invoke(NBTCompressedStreamTools, inputStream)
             if (NBTTag != null) return NBTTag
         } catch (e: Exception) {
             e.printStackTrace()
         }
         return Any()
-    }
-
-    fun setEntityNBT(entity: Entity, newTag: Any?) {
-        if (newTag == null) return
-        try {
-            val oldTag = getNBTTag(entity)
-            val get_oldTag = NBTTagCompound.method("get", String::class.java)
-
-            // Copy the position on the old tag to the new tag
-            val set_newTag = NBTTagCompound.method("set", String::class.java, NBTBase)
-            set_newTag.invoke(newTag, "Pos", get_oldTag.invoke(oldTag, "Pos"))
-            // And set the DeathTime property to zero, this makes possible to keep spawning a death mob and re-grabbing it indefinitely
-            val setShort_newTag = NBTTagCompound.method("setShort", String::class.java, Short::class.javaPrimitiveType)
-            setShort_newTag.invoke(newTag, "DeathTime", 0.toShort())
-
-            // And load it on the entity
-            val nmsEntity = getNMSEntity(entity)
-            val load_nmsEntity = NMS_Entity.method("load", NBTTagCompound)
-            load_nmsEntity.invoke(nmsEntity, newTag)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    fun createEquipmentForEntity(entity: LivingEntity): EntityEquipment? {
-        try {
-            val craftEntity = CraftLivingEntity.cast(entity)
-            val newEntityEquipment = CraftEntityEquipment.constructor(CraftLivingEntity).newInstance(craftEntity)
-            return newEntityEquipment as EntityEquipment
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
-    }
-
-    fun setEquipmentOnEntity(entity: LivingEntity, equipment: EntityEquipment) {
-        try {
-            val craftEntity = CraftLivingEntity.cast(entity)
-            val entityEquipment = CraftLivingEntity.field("equipment")
-
-            val craftEquipment = CraftEntityEquipment.cast(equipment)
-            val entityOnEquip = CraftEntityEquipment.field("entity")
-            setValueOnFinalField(entityOnEquip, craftEquipment, craftEntity)
-
-            entityEquipment[craftEntity] = craftEquipment
-            if (entity is Player) entity.updateInventory()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     /**
@@ -268,18 +176,15 @@ class Reflections {
             val NBTTag = getNBTTagFromInputStream(inputStream)
 
             // Creating a new NMS_ItemStack from the NBTTag
-            val nmsItem: Any
-            when {
+            val nmsItem: Any = when {
                 VersionUtil.serverVersion.isLowerThanOrEqualTo(VersionUtil.v1_10_2_R01) -> {
-                    nmsItem = NMS_ItemStack.method("createStack", NBTTagCompound).invoke(NMS_ItemStack, NBTTag)
+                    NMS_ItemStack.method("createStack", NBTTagCompound).invoke(NMS_ItemStack, NBTTag)
                 }
                 VersionUtil.serverVersion.isLowerThanOrEqualTo(VersionUtil.v1_12_2_R01) -> {
-                    val airBlock = NMS_Blocks.field("AIR")[NMS_Block]
-                    nmsItem = NMS_ItemStack.constructor(NMS_Block).newInstance(airBlock)
-                    NMS_ItemStack.method("load", NBTTagCompound).invoke(nmsItem, NBTTag)
+                    NMS_ItemStack.constructor(NBTTagCompound).newInstance(NBTTag)
                 }
                 else -> {
-                    nmsItem = NMS_ItemStack.method("a", NBTTagCompound).invoke(NMS_ItemStack, NBTTag)
+                    NMS_ItemStack.method("a", NBTTagCompound).invoke(NMS_ItemStack, NBTTag)
                 }
             }
 
