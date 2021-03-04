@@ -87,5 +87,5 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
 
     private fun InventoryAction.isPickUp() = this == InventoryAction.PICKUP_ALL || this == InventoryAction.PICKUP_HALF || this == InventoryAction.PICKUP_SOME || this == InventoryAction.PICKUP_ONE
 
-    private fun InventoryAction.isPlace() = this == InventoryAction.PLACE_ALL || this == InventoryAction.PLACE_SOME || this == InventoryAction.PLACE_ONE
+    private fun InventoryAction.isPlace() = this == InventoryAction.PLACE_ALL || this == InventoryAction.PLACE_SOME || this == InventoryAction.PLACE_ONE || this == InventoryAction.SWAP_WITH_CURSOR
 }
