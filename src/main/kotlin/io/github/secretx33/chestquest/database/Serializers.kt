@@ -60,7 +60,7 @@ class InventorySerializer {
         val map: Map<String, String> = mapAdapter.fromJson(json) ?: throw NullPointerException("adapter returned a null value")
         map.run {
             val location: Location = locAdapter.fromJson(get("holder")!!)!!
-            val holder: Container? = Bukkit.getWorld(location.world.uid).getBlockAt(location) as? Container
+            val holder: Container? = Bukkit.getWorld(location.world.uid).getBlockAt(location).state as? Container
 
             val inv = Bukkit.createInventory(holder, InventoryType.values()[get("type")!!.toInt()])
             repeat(inv.size) { index ->
