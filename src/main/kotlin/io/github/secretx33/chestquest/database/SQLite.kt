@@ -140,7 +140,7 @@ class SQLite(plugin: Plugin) {
 
     // GET
 
-    fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory {
+    fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory? {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
@@ -159,6 +159,8 @@ class SQLite(plugin: Plugin) {
                         }
                         else -> return inv
                     }
+                } else {
+                    return null
                 }
             }
         } catch (e: SQLException) {
@@ -177,14 +179,13 @@ class SQLite(plugin: Plugin) {
                 val rs = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST).executeQuery()
                 while(rs.next()){
                     val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
-                    debugMessage("Loaded chest at $chestLoc")
                     if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
                         debugMessage("Null world detected: ${rs.getString("location")} wasn't found")
                         UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
                             if(worldRemoveSet.add(it)) debugMessage("Added UUID is $it")
                         }
                     } else if(chestLoc.world != null) {
-                        if (chestLoc.world.getBlockAt(chestLoc) !is Container) {
+                        if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
                             consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugins being disabled or missing.")
                             chestRemoveSet.add(chestLoc)
                         } else {

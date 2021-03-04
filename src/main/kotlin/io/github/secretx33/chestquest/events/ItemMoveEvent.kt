@@ -37,7 +37,7 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private fun onItemMove(event: InventoryClickEvent) {
         if(event.clickedInventory == null) return
-        debugMessage("1. ${event.whoClicked.name} clicked on [${event.action?.name}] CI ${event.clickedInventory?.type?.name} (I ${event.inventory?.type?.name}) at ${event.clickedInventory?.location != null}")
+        debugMessage("1. ${event.whoClicked.name} clicked on [${event.action?.name}] CI ${event.clickedInventory.type?.name} (I ${event.inventory?.type?.name}) at ${event.clickedInventory?.location != null}")
         if (event.isPickAction()) debugMessage("1. Is pickup")
         if (event.isPutAction()) debugMessage("1. Is put action")
 
@@ -50,7 +50,8 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private fun onItemClickMonitor(event: InventoryClickEvent) {
-        val inv = event.inventory ?: return
+        if(event.clickedInventory == null) return
+        val inv = event.inventory
         val player = event.whoClicked as Player
 
         if((event.isPickAction() || event.isSwapInside()) && inv.isChest() && chestRepo.isChestInventory(inv)){

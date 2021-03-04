@@ -44,9 +44,7 @@ object Utils: KoinComponent {
     val chestRepo: ChestRepo by inject()
     val reflections: Reflections by inject()
 
-    fun consoleMessage(msg: String) {
-        console.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
-    }
+    fun consoleMessage(msg: String) = console.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
 
     fun debugMessage(msg: String) {
         if(Config.debug) console.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
