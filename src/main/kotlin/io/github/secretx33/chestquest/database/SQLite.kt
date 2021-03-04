@@ -180,7 +180,6 @@ class SQLite(plugin: Plugin) {
                 while(rs.next()){
                     val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
                     if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
-                        debugMessage("Null world detected: ${rs.getString("location")} wasn't found")
                         UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
                             if(worldRemoveSet.add(it)) debugMessage("Added UUID is $it")
                         }
@@ -269,7 +268,7 @@ class SQLite(plugin: Plugin) {
         // updates
         const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
         // removes
-        const val REMOVE_QUEST_CHESTS_OF_WORLD = """DELETE FROM questChests WHERE location LIKE ?;"""
+        const val REMOVE_QUEST_CHESTS_OF_WORLD = "DELETE FROM questChests WHERE location LIKE ?;"
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
 
         val UUID_WORLD_PATTERN: Pattern = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
