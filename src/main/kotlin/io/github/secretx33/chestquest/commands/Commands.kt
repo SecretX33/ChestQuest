@@ -2,10 +2,12 @@ package io.github.secretx33.chestquest.commands
 
 import io.github.secretx33.chestquest.config.Config
 import io.github.secretx33.chestquest.config.Const
+import io.github.secretx33.chestquest.config.Const.CONFIGS_RELOADED
 import io.github.secretx33.chestquest.config.Const.DEBUG_MODE_STATE_CHANGED
 import io.github.secretx33.chestquest.config.Const.PLUGIN_COMMAND_PREFIX
 import io.github.secretx33.chestquest.repository.ChestRepo
 import io.github.secretx33.chestquest.utils.*
+import io.github.secretx33.chestquest.utils.Utils.consoleMessage
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -34,6 +36,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo)
                             } else {
                                 chestRepo.addQuestChest(it.location)
                                 sender.message("Marked chest at ${it.coordinates()} as a Quest Chest")
+                                consoleMessage("Marked chest at ${it.coordinates()} as a Quest Chest")
                             }
                         }
                     }
@@ -45,6 +48,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo)
                             if(chestRepo.isQuestChest(it.location)) {
                                 chestRepo.removeQuestChest(it.location)
                                 sender.message("Converted chest at ${it.coordinates()}} back to a normal chest")
+                                consoleMessage("Converted chest at ${it.coordinates()}} back to a normal chest")
                             } else {
                                 sender.message("This chest is NOT a Quest Chest")
                             }
@@ -55,14 +59,16 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo)
                     plugin.saveDefaultConfig()
                     plugin.reloadConfig()
                     Config.reloadConfig()
-                    sender.sendMessage(Const.CONFIGS_RELOADED)
+                    sender.sendMessage(CONFIGS_RELOADED)
+                    if(sender !is Player) consoleMessage(CONFIGS_RELOADED)
                 }
                 "debug" -> if (sender.canToggleDebug()) {
                     val config = plugin.config
                     Config.debug = !Config.debug
                     config["general.debug"] = Config.debug
                     plugin.saveConfig()
-                    sender.sendMessage(String.format(DEBUG_MODE_STATE_CHANGED, if(Config.debug) "ON" else "OFF"))
+                    sender.sendMessage(DEBUG_MODE_STATE_CHANGED.format(if(Config.debug) "ON" else "OFF"))
+                    if(sender !is Player) consoleMessage(DEBUG_MODE_STATE_CHANGED.format(if(Config.debug) "ON" else "OFF"))
                 }
             }
         }

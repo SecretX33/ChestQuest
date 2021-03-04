@@ -107,12 +107,14 @@ class SQLite(plugin: Plugin) {
     private fun removeQuestChestsByWorldUuid(worldUuids: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(REMOVE_QUEST_CHESTS_OF_WORLD)
                 worldUuids.forEach {
-                    val prep = conn.prepareStatement(REMOVE_QUEST_CHESTS_OF_WORLD).apply {
+                    prep.apply {
                         setString(1, "%$it%")
+                        addBatch()
                     }
-                    prep.execute()
                 }
+                prep.executeBatch()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -124,12 +126,14 @@ class SQLite(plugin: Plugin) {
     private fun removeQuestChestsByLocation(locations: Iterable<Location>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(REMOVE_QUEST_CHEST)
                 locations.forEach { loc ->
-                    val prep = conn.prepareStatement(REMOVE_QUEST_CHEST).apply {
+                    prep.apply {
                         setString(1, jsonLoc.toJson(loc))
+                        addBatch()
                     }
-                    prep.execute()
                 }
+                prep.executeBatch()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -181,11 +185,11 @@ class SQLite(plugin: Plugin) {
                     val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
                     if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
                         UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
-                            if(worldRemoveSet.add(it)) debugMessage("Added UUID is $it")
+                            worldRemoveSet.add(it)
                         }
                     } else if(chestLoc.world != null) {
                         if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
-                            consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugins being disabled or missing.")
+                            consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
                             chestRemoveSet.add(chestLoc)
                         } else {
                             chestSet.add(chestLoc)
