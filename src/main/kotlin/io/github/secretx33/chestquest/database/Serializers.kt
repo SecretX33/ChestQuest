@@ -18,9 +18,9 @@ class LocationSerializer {
     @ToJson fun serialize(src: Location): String {
         val map = mapOf(
             "world" to src.world.uid.toString(),
-            "x" to src.x.toInt().toString(),
-            "y" to src.y.toInt().toString(),
-            "z" to src.z.toInt().toString(),
+            "x" to src.x.toLong().toString(),
+            "y" to src.y.toLong().toString(),
+            "z" to src.z.toLong().toString(),
         )
         return mapAdapter.toJson(map)
     }
@@ -38,8 +38,8 @@ class LocationSerializer {
     }
 
     private companion object {
-        val mapType = Types.newParameterizedType(Map::class.java, String::class.java, String::class.java)
-        val mapAdapter = Moshi.Builder().build().adapter<Map<String, String>>(mapType)
+        val mapType: ParameterizedType = Types.newParameterizedType(Map::class.java, String::class.java, String::class.java)
+        val mapAdapter: JsonAdapter<Map<String, String>> = Moshi.Builder().build().adapter(mapType)
     }
 }
 

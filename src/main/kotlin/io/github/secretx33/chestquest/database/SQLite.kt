@@ -156,10 +156,10 @@ class SQLite(plugin: Plugin) {
                     val inv = jsonInv.fromJson(rs.getString("inventory"))
                     when {
                         inv == null -> {
-                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
+                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
                         }
                         inv.holder == null -> {
-                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
                         }
                         else -> return inv
                     }
