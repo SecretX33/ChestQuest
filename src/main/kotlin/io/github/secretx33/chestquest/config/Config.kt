@@ -1,6 +1,7 @@
 package io.github.secretx33.chestquest.config
 
 import io.github.secretx33.chestquest.utils.Utils.consoleMessage
+import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
@@ -10,10 +11,8 @@ import org.koin.core.component.inject
 @KoinApiExtension
 object Config : KoinComponent {
     private val plugin: Plugin by inject()
-    var removeDBEntriesIfWorldIsMissing = true
+    var removeDBEntriesIfWorldIsMissing = false
     var debug: Boolean = false
-
-    init { reloadConfig() }
 
     fun reloadConfig() {
         val config = plugin.config
@@ -26,10 +25,16 @@ object Config : KoinComponent {
             consoleMessage(String.format(Const.SECTION_NOT_FOUND, section))
             return
         }
-        var field = "automatically-remove-db-entries-from-missing-world"
-        if(config.isSet("$section.field")){
-            removeDBEntriesIfWorldIsMissing = config.getBoolean(field)
+        if(config.isSet("general.debug")){
+            debug = config.getBoolean("general.debug")
+        } else {
+            consoleMessage(String.format(Const.ENTRY_NOT_FOUND, "debug"))
         }
-        if(config.isSet("general.debug")) debug = config.getBoolean("general.debug")
+        val field = "automatically-remove-db-entries-from-missing-world"
+        if(config.isSet("general.$field")){
+            removeDBEntriesIfWorldIsMissing = config.getBoolean("general.$field")
+        } else {
+            consoleMessage(String.format(Const.ENTRY_NOT_FOUND, field))
+        }
     }
 }

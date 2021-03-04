@@ -43,21 +43,21 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
     private fun mark(sender: CommandSender, strings: Array<String>): Boolean {
         if(!sender.canEditQC()) return true
 
-        if(sender !is Player) sender.sendMessage("You may only use this command in-game")
+        if(sender !is Player) sender.sendMessage("${ChatColor.RED}You may only use this command in-game")
         else {
             if(strings.size == 1) {
-                sender.sendMessage("Please type a number after ${ChatColor.GOLD}mark${ChatColor.WHITE}. Command usage: /cq mark [number]")
+                sender.message("${ChatColor.RED}Please type a number after ${ChatColor.GOLD}mark${ChatColor.RED}. Command usage: /cq mark [number]")
                 return true
             }
             try {
                 val order = strings[1].toInt()
                 if(order < 1) {
-                    sender.sendMessage("Please type a number greater than 0. Command usage: /cq mark [number]")
+                    sender.message("${ChatColor.RED}Please type a number greater than 0. Command usage: /cq mark [number]")
                     return true
                 }
                 sender.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let { chest ->
                     if(chestRepo.isQuestChest(chest.location)) {
-                        sender.message("This chest is already a Quest Chest")
+                        sender.message("${ChatColor.RED}This chest is already a Quest Chest")
                     } else {
                         chestRepo.addQuestChest(chest.location, order)
                         sender.message("Marked chest at ${chest.coordinates()} as a Quest Chest ${ChatColor.BLUE}$order")
@@ -65,7 +65,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
                     }
                 }
             } catch (e: NumberFormatException) {
-                sender.sendMessage("Please type only numbers after ${ChatColor.GOLD}mark${ChatColor.WHITE}. Command usage: /cq mark [number]")
+                sender.message("${ChatColor.RED}Please type only numbers after ${ChatColor.GOLD}mark${ChatColor.WHITE}. Command usage: /cq mark [number]")
             }
         }
 
@@ -75,7 +75,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
     private fun unmark(sender: CommandSender): Boolean {
         if(!sender.canEditQC()) return true
 
-        if(sender !is Player) sender.sendMessage("You may only use this command ingame")
+        if(sender !is Player) sender.sendMessage("${ChatColor.RED}You may only use this command ingame")
         else {
             sender.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let {
                 if(chestRepo.isQuestChest(it.location)) {
@@ -83,7 +83,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
                     sender.message("Converted chest at ${it.coordinates()}} back to a normal chest")
                     consoleMessage("Converted chest at ${it.coordinates()}} back to a normal chest")
                 } else {
-                    sender.message("This chest is NOT a Quest Chest")
+                    sender.message("${ChatColor.RED}This chest is NOT a Quest Chest")
                 }
             }
         }
@@ -93,21 +93,21 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
     private fun setorder(sender: CommandSender, strings: Array<String>): Boolean {
         if(!sender.canEditQC()) return true
 
-        if(sender !is Player) sender.sendMessage("You may only use this command in-game")
+        if(sender !is Player) sender.sendMessage("${ChatColor.RED}You may only use this command in-game")
         else {
             if(strings.size == 1) {
-                sender.sendMessage("Please type a number after ${ChatColor.GOLD}setorder${ChatColor.WHITE}. Command usage: /cq setorder [number]")
+                sender.message("${ChatColor.RED}Please type a number after ${ChatColor.GOLD}setorder${ChatColor.RED}. Command usage: /cq setorder [number]")
                 return true
             }
             try {
                 val order = strings[1].toInt()
                 if(order < 1) {
-                    sender.sendMessage("Please type a number greater than 0. Command usage: /cq setorder [number]")
+                    sender.message("${ChatColor.RED}Please type a number greater than 0. Command usage: /cq setorder [number]")
                     return true
                 }
                 sender.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let { chest ->
                     if(!chestRepo.isQuestChest(chest.location)) {
-                        sender.message("This chest is not a Quest Chest, you can't change its order")
+                        sender.message("${ChatColor.RED}This chest is not a Quest Chest, you can't change its order")
                     } else {
                         val oldOrder = chestRepo.changeOrderQuestChest(chest.location, order)
                         sender.message("Chest order is now ${ChatColor.RED}$order${ChatColor.WHITE} (previously $oldOrder)")
@@ -115,7 +115,7 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
                     }
                 }
             } catch (e: NumberFormatException) {
-                sender.sendMessage("Please type only numbers after ${ChatColor.GOLD}setorder${ChatColor.WHITE}. Command usage: /cq setorder [number]")
+                sender.message("${ChatColor.RED}Please type only numbers after ${ChatColor.GOLD}setorder${ChatColor.RED}. Command usage: /cq setorder [number]")
             }
         }
         return true
@@ -124,11 +124,11 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
     private fun order(sender: CommandSender): Boolean {
         if(!sender.canEditQC()) return true
 
-        if(sender !is Player) sender.sendMessage("You may only use this command in-game")
+        if(sender !is Player) sender.sendMessage("${ChatColor.RED}You may only use this command in-game")
         else {
             sender.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let { chest ->
                 if(!chestRepo.isQuestChest(chest.location)) {
-                    sender.message("This chest is not a Quest Chest, and so it doesn't have order")
+                    sender.message("${ChatColor.RED}This chest is not a Quest Chest, and so it doesn't have order")
                 } else {
                     val order = chestRepo.getQuestChestOrder(chest.location)
                     sender.message("This chest order is ${ChatColor.RED}$order")
@@ -142,16 +142,16 @@ class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo,
         if(!sender.canResetProgress()) return true
 
         if(strings.size == 1) {
-            sender.sendMessage("Please type a name after ${ChatColor.GOLD}reset${ChatColor.WHITE}. Command usage: /cq resetprogress [playerName]")
+            sender.message("${ChatColor.RED}Please type a name after ${ChatColor.GOLD}reset${ChatColor.RED}. Command usage: /cq resetprogress [playerName]")
             return true
         }
         val player = Bukkit.getPlayer(strings[1])
         if(player == null) {
-            sender.sendMessage("Player ${ChatColor.BLUE}${strings[1]}${ChatColor.WHITE} was not found, please check if you spelled his name correctly.")
+            sender.message("${ChatColor.RED}Player ${ChatColor.BLUE}${strings[1]}${ChatColor.RED} was not found, please check if you spelled his name correctly.")
             return true
         }
         progressRepo.clearPlayerProgress(player)
-        sender.sendMessage("Cleared ALL progress from player ${ChatColor.BLUE}${player.name}${ChatColor.WHITE}.")
+        sender.message("Cleared ALL progress from player ${ChatColor.BLUE}${player.name}${ChatColor.WHITE}.")
         return true
     }
 

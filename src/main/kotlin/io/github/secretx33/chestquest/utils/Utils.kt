@@ -64,7 +64,7 @@ fun Inventory.clone(): Inventory {
 @KoinApiExtension
 fun Chest.clone(): Inventory = this.inventory.clone()
 
-fun Player.message(msg: String) = this.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
+fun CommandSender.message(msg: String) = this.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
 
 fun CommandSender.canEditQC() = hasPermission("$PLUGIN_PERMISSION_PREFIX.edit")
 

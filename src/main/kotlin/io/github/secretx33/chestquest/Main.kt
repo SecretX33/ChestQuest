@@ -1,6 +1,7 @@
 package io.github.secretx33.chestquest
 
 import io.github.secretx33.chestquest.commands.Commands
+import io.github.secretx33.chestquest.config.Config
 import io.github.secretx33.chestquest.database.SQLite
 import io.github.secretx33.chestquest.events.*
 import io.github.secretx33.chestquest.repository.ChestRepo
@@ -35,6 +36,7 @@ class Main : JavaPlugin(), KoinComponent {
                 single { PlayerProgressRepo(get()) }
             })
         }
+        Config.reloadConfig()
         val commands = Commands(get(), get(), get())
         val breakChestEvent = BreakChestEvent(get(), get())
         val closeInvEvent = CloseInventoryEvent(get(), get())

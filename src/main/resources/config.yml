@@ -19,3 +19,4 @@
 
 general:
   automatically-remove-db-entries-from-missing-world: true
+  debug: false
