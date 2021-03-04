@@ -66,8 +66,6 @@ fun Chest.clone(): Inventory = this.inventory.clone()
 
 fun Player.message(msg: String) = this.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
 
-fun CommandSender.canOpenQC() = hasPermission("$PLUGIN_PERMISSION_PREFIX.open")
-
 fun CommandSender.canEditQC() = hasPermission("$PLUGIN_PERMISSION_PREFIX.edit")
 
 fun CommandSender.canResetProgress() = hasPermission("$PLUGIN_PERMISSION_PREFIX.resetprogress")

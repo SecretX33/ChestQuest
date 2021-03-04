@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import org.koin.core.component.KoinApiExtension
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -22,6 +23,10 @@ class PlayerProgressRepo(private val db: SQLite) {
         playerProgress.putAll(db.getAllPlayerProgressAsync().await())
     }
 
+    fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
+        playerProgress.remove(playerUuid)
+    }
+
     fun getPlayerProgress(playerUuid: UUID): Int {
         return playerProgress.getOrPut(playerUuid) {
 //            db.getPlayerProgress(playerUuid) ?: 1.also { db.addPlayerProgress(playerUuid, 1) }
@@ -31,18 +36,26 @@ class PlayerProgressRepo(private val db: SQLite) {
                 dbEntry
             } else {
                 Utils.debugMessage("Player ${Bukkit.getPlayer(playerUuid).name ?: playerUuid.toString()} had no progress before, setting it to one")
-                db.addPlayerProgress(playerUuid, 1)
-                1
+                db.addPlayerProgress(playerUuid, 0)
+                0
             }
         }
     }
 
     fun canOpenChest(playerUuid: UUID, chestOrder: Int): Boolean {
         val progress = getPlayerProgress(playerUuid)
-        Utils.debugMessage("1. Player progress is $progress")
+
         if(chestOrder - 1 > progress)
             return false
-        playerProgress[playerUuid] = progress + 1
+        if(chestOrder == progress + 1) {
+            playerProgress[playerUuid] = progress + 1
+            db.updatePlayerProgress(playerUuid, progress + 1)
+        }
         return true
+    }
+
+    fun clearPlayerProgress(player: Player) {
+        playerProgress.remove(player.uniqueId)
+        db.removePlayerProgress(player.uniqueId)
     }
 }

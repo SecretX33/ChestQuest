@@ -90,6 +90,7 @@ class SQLite(plugin: Plugin) {
     }
 
     fun addPlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
+        require(progress >= 0) { consoleMessage("Progress has to be at least 0. Actual value if $progress") }
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(INSERT_PLAYER_PROGRESS).apply {
@@ -156,6 +157,21 @@ class SQLite(plugin: Plugin) {
             }
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a list of quest chests")
+            e.printStackTrace()
+        }
+    }
+
+    fun removePlayerProgress(playerUuid: UUID) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(REMOVE_PLAYER_PROGRESS).apply {
+                    setString(1, playerUuid.toString())
+                }
+                prep.execute()
+                conn.commit()
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
             e.printStackTrace()
         }
     }
@@ -246,6 +262,10 @@ class SQLite(plugin: Plugin) {
         map
     }
 
+    /**
+     * Get all entries of database for Player Progress table, which stores player progress in the quest chain
+     * @return Deferred<Map<UUID, Int>> UUID is the player UUID, and Int is his progress in the quest chain, used to prevent him of opening chests that have higher number than the player progress + 1
+     */
     fun getAllPlayerProgressAsync(): Deferred<Map<UUID, Int>> = CoroutineScope(Dispatchers.IO).async {
         val map = HashMap<UUID, Int>()
         try {
@@ -253,7 +273,7 @@ class SQLite(plugin: Plugin) {
                 val rs = conn.prepareStatement(SELECT_ALL_FROM_PLAYER_PROGRESS).executeQuery()
                 while(rs.next()){
                     val key = UUID.fromString(rs.getString("player_uuid"))
-                    val value = rs.getInt("chest_location")
+                    val value = rs.getInt("progress")
                     map[key] = value
                 }
             }
@@ -317,6 +337,22 @@ class SQLite(plugin: Plugin) {
         }
     }
 
+    fun updatePlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(UPDATE_PLAYER_PROGRESS).apply {
+                    setInt(1, progress)
+                    setString(2, playerUuid.toString())
+                }
+                prep.execute()
+                conn.commit()
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
+            e.printStackTrace()
+        }
+    }
+
     private fun newEmptyInventory(): Inventory = Bukkit.createInventory(null, InventoryType.CHEST)
 
     private companion object {
@@ -348,9 +384,11 @@ class SQLite(plugin: Plugin) {
         // updates
         const val UPDATE_QUEST_CHEST_ORDER = "UPDATE questChests SET chest_order = ? WHERE location = ?;"
         const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
+        const val UPDATE_PLAYER_PROGRESS = "UPDATE playerProgress SET progress = ? WHERE player_uuid = ?;"
         // removes
         const val REMOVE_QUEST_CHESTS_OF_WORLD = "DELETE FROM questChests WHERE location LIKE ?;"
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
+        const val REMOVE_PLAYER_PROGRESS = "DELETE FROM playerProgress WHERE player_uuid = ?;"
 
         val UUID_WORLD_PATTERN: Pattern = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
     }

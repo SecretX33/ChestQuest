@@ -17,13 +17,10 @@ permissions:
     description: Gives access to all ${name} commands. Default to players with op.
     default: op
     children:
-      cq.open: true
       cq.edit: true
+      cq.resetprogress: true
       cq.reload: true
       cq.debug: true
-  cq.open:
-    description: Allows a player to open a "quest" chest
-    default: true
   cq.edit:
     description: Allows a player to create, mark, unmark and edit "quest" chests
     default: false

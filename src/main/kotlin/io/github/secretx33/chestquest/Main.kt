@@ -35,12 +35,12 @@ class Main : JavaPlugin(), KoinComponent {
                 single { PlayerProgressRepo(get()) }
             })
         }
-        val commands = Commands(get(), get())
+        val commands = Commands(get(), get(), get())
         val breakChestEvent = BreakChestEvent(get(), get())
         val closeInvEvent = CloseInventoryEvent(get(), get())
         val itemMoveEvent = ItemMoveEvent(get(), get())
         val openChestEvent = OpenChestEvent(get(), get(), get())
-        val playerLogoutEvent = PlayerLogoutEvent(get(), get())
+        val playerLogoutEvent = PlayerLogoutEvent(get(), get(), get())
         consoleMessage("loaded")
     }
 

@@ -30,15 +30,13 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo, private v
         val chest = event.clickedBlock?.state as Chest
         val chestOrder = chestRepo.getQuestChestOrder(chest.location)
 
-        debugMessage("0. Chest order is $chestOrder")
-
         if(!progressRepo.canOpenChest(player.uniqueId, chestOrder)) {
             event.isCancelled = true
             debugMessage("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player.uniqueId)}, he cannot open a chest that has a order of $chestOrder")
         } else {
             event.isCancelled = true
             player.openInventory(chestRepo.getChestContent(chest, player))
-            debugMessage("Altered interaction with chest")
+            debugMessage("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player.uniqueId)}")
         }
     }
 
