@@ -13,6 +13,7 @@ import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.block.Container
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
@@ -44,7 +45,7 @@ class SQLite(plugin: Plugin) {
                 debugMessage("Initiated DB")
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database and create the tables")
             e.printStackTrace()
         }
     }
@@ -62,7 +63,7 @@ class SQLite(plugin: Plugin) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.prettyString()})")
             e.printStackTrace()
         }
     }
@@ -81,7 +82,7 @@ class SQLite(plugin: Plugin) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.prettyString()} to the database")
             e.printStackTrace()
         }
     }
@@ -98,7 +99,7 @@ class SQLite(plugin: Plugin) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
             e.printStackTrace()
         }
     }
@@ -115,7 +116,7 @@ class SQLite(plugin: Plugin) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to buck remove all quest chests from worlds")
             e.printStackTrace()
         }
     }
@@ -132,14 +133,14 @@ class SQLite(plugin: Plugin) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a list of quest chests")
             e.printStackTrace()
         }
     }
 
     // GET
 
-    fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory? {
+    fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory {
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
@@ -149,19 +150,22 @@ class SQLite(plugin: Plugin) {
                 val rs = prep.executeQuery()
                 if(rs.next()){
                     val inv = jsonInv.fromJson(rs.getString("inventory"))
-                    if(inv == null) {
-                        consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
-                    } else if(inv.holder == null) {
-                        consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                    when {
+                        inv == null -> {
+                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
+                        }
+                        inv.holder == null -> {
+                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                        }
+                        else -> return inv
                     }
-                    return inv
                 }
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.prettyString()} from database")
             e.printStackTrace()
         }
-        return null
+        return newEmptyInventory()
     }
 
     fun getAllQuestChestsAsync(): Deferred<Set<Location>> = CoroutineScope(Dispatchers.IO).async {
@@ -196,7 +200,7 @@ class SQLite(plugin: Plugin) {
                     removeQuestChestsByLocation(chestRemoveSet)
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database")
             e.printStackTrace()
         }
         chestSet
@@ -214,7 +218,7 @@ class SQLite(plugin: Plugin) {
                 }
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get all chest contents from database async")
             e.printStackTrace()
         }
         map
@@ -232,10 +236,12 @@ class SQLite(plugin: Plugin) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}An exception occurred while trying to connect to the database")
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while updating an inventory to the database")
             e.printStackTrace()
         }
     }
+
+    private fun newEmptyInventory(): Inventory = Bukkit.createInventory(null, InventoryType.CHEST)
 
     private companion object {
         val moshi: Moshi = Moshi.Builder()
