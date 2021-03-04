@@ -1,8 +1,10 @@
 package io.github.secretx33.chestquest.database
 
 import com.squareup.moshi.*
+import io.github.secretx33.chestquest.utils.Utils.consoleMessage
 import io.github.secretx33.chestquest.utils.Utils.reflections
 import io.github.secretx33.chestquest.utils.locationByAllMeans
+import io.github.secretx33.chestquest.utils.prettyString
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Container
@@ -18,9 +20,9 @@ class LocationSerializer {
     @ToJson fun serialize(src: Location): String {
         val map = mapOf(
             "world" to src.world.uid.toString(),
-            "x" to src.x.toLong().toString(),
-            "y" to src.y.toLong().toString(),
-            "z" to src.z.toLong().toString(),
+            "x" to src.x.toLong(),
+            "y" to src.y.toLong(),
+            "z" to src.z.toLong(),
         )
         return mapAdapter.toJson(map)
     }
@@ -29,17 +31,17 @@ class LocationSerializer {
         val map = mapAdapter.fromJson(json) ?: throw NullPointerException("adapter returned a null value")
         map.run {
             return Location(
-                Bukkit.getWorld(UUID.fromString(get("world"))),
-                get("x")!!.toDouble(),
-                get("y")!!.toDouble(),
-                get("z")!!.toDouble(),
+                Bukkit.getWorld(UUID.fromString(getValue("world").toString())),
+                getValue("x") as Double,
+                getValue("y") as Double,
+                getValue("z") as Double,
             )
         }
     }
 
     private companion object {
-        val mapType: ParameterizedType = Types.newParameterizedType(Map::class.java, String::class.java, String::class.java)
-        val mapAdapter: JsonAdapter<Map<String, String>> = Moshi.Builder().build().adapter(mapType)
+        val mapType: ParameterizedType = Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java)
+        val mapAdapter: JsonAdapter<Map<String, Any>> = Moshi.Builder().build().adapter(mapType)
     }
 }
 
@@ -49,7 +51,7 @@ class InventorySerializer {
     @ToJson fun serialize(src: Inventory): String {
         val map = HashMap<String, String>()
         map["holder"] = locAdapter.toJson(src.locationByAllMeans())
-        map["type"] = src.type.ordinal.toString()
+        map["type"] = src.type.toString()
         src.contents.forEachIndexed { slot, item: ItemStack? ->
             item?.let { map[slot.toString()] = reflections.serialize(item) }
         }
@@ -59,10 +61,10 @@ class InventorySerializer {
     @FromJson fun deserialize(json: String): Inventory {
         val map: Map<String, String> = mapAdapter.fromJson(json) ?: throw NullPointerException("adapter returned a null value")
         map.run {
-            val location: Location = locAdapter.fromJson(get("holder")!!)!!
+            val location: Location = locAdapter.fromJson(getValue("holder"))!!
             val holder: Container? = Bukkit.getWorld(location.world.uid).getBlockAt(location).state as? Container
 
-            val inv = Bukkit.createInventory(holder, InventoryType.values()[get("type")!!.toInt()])
+            val inv = Bukkit.createInventory(holder, InventoryType.valueOf(getValue("type")))
             repeat(inv.size) { index ->
                 get(index.toString())?.let { inv.setItem(index, reflections.deserializeItem(it)) }
             }

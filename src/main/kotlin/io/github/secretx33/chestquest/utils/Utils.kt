@@ -85,4 +85,4 @@ fun Block.isQuestChest(): Boolean = isChest() && chestRepo.isQuestChest(location
 
 fun Block.coordinates(): String = "${location.x.toLong()} ${location.y.toLong()} ${location.z.toLong()}"
 
-fun Location.prettyString(): String = "World: ${world.name}, ${x.toLong()}, ${y.toLong()}, ${z.toLong()}"
+fun Location.prettyString(): String = "World: ${world?.name ?: "Unknown"}, ${x.toLong()}, ${y.toLong()}, ${z.toLong()}"
