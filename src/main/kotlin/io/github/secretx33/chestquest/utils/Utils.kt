@@ -70,6 +70,8 @@ fun CommandSender.canOpenQC() = hasPermission("$PLUGIN_PERMISSION_PREFIX.open")
 
 fun CommandSender.canEditQC() = hasPermission("$PLUGIN_PERMISSION_PREFIX.edit")
 
+fun CommandSender.canResetProgress() = hasPermission("$PLUGIN_PERMISSION_PREFIX.resetprogress")
+
 fun CommandSender.canReload() = hasPermission("$PLUGIN_PERMISSION_PREFIX.reload")
 
 fun CommandSender.canToggleDebug() = hasPermission("$PLUGIN_PERMISSION_PREFIX.debug")

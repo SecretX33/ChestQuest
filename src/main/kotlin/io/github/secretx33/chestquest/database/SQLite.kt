@@ -40,6 +40,7 @@ class SQLite(plugin: Plugin) {
             ds.connection.use { conn: Connection ->
                 conn.prepareStatement(CREATE_QUEST_CHESTS).execute()
                 conn.prepareStatement(CREATE_CHEST_CONTENT).execute()
+                conn.prepareStatement(CREATE_PLAYER_PROGRESS).execute()
                 conn.prepareStatement(CREATE_TRIGGER).execute()
                 conn.commit()
                 debugMessage("Initiated DB")
@@ -52,7 +53,8 @@ class SQLite(plugin: Plugin) {
 
     // ADD
 
-    fun addQuestChest(chestLoc: Location) = CoroutineScope(Dispatchers.IO).launch {
+    fun addQuestChest(chestLoc: Location, chestOrder: Int) = CoroutineScope(Dispatchers.IO).launch {
+        require(chestOrder >= 1) { consoleMessage("Chest order cannot be less than 1, actual value is $chestOrder") }
         try {
             ds.connection.use { conn: Connection ->
                 val temp = jsonLoc.toJson(chestLoc)
@@ -83,6 +85,22 @@ class SQLite(plugin: Plugin) {
             }
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.prettyString()} to the database")
+            e.printStackTrace()
+        }
+    }
+
+    fun addPlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(INSERT_PLAYER_PROGRESS).apply {
+                    setString(1, playerUuid.toString())
+                    setInt(2, progress)
+                }
+                prep.execute()
+                conn.commit()
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
             e.printStackTrace()
         }
     }
@@ -174,8 +192,8 @@ class SQLite(plugin: Plugin) {
         return newEmptyInventory()
     }
 
-    fun getAllQuestChestsAsync(): Deferred<Set<Location>> = CoroutineScope(Dispatchers.IO).async {
-        val chestSet = HashSet<Location>()
+    fun getAllQuestChestsAsync(): Deferred<Map<Location, Int>> = CoroutineScope(Dispatchers.IO).async {
+        val chestMap = HashMap<Location, Int>()
         val worldRemoveSet = HashSet<String>()
         val chestRemoveSet = HashSet<Location>()
         try {
@@ -192,7 +210,7 @@ class SQLite(plugin: Plugin) {
                             consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
                             chestRemoveSet.add(chestLoc)
                         } else {
-                            chestSet.add(chestLoc)
+                            chestMap[chestLoc] = rs.getInt("chest_order")
                         }
                     }
                 }
@@ -207,7 +225,7 @@ class SQLite(plugin: Plugin) {
             consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database")
             e.printStackTrace()
         }
-        chestSet
+        chestMap
     }
 
     fun getAllChestContentsAsync(): Deferred<Map<Pair<Location, UUID>, Inventory>> = CoroutineScope(Dispatchers.IO).async {
@@ -228,6 +246,44 @@ class SQLite(plugin: Plugin) {
         map
     }
 
+    fun getAllPlayerProgressAsync(): Deferred<Map<UUID, Int>> = CoroutineScope(Dispatchers.IO).async {
+        val map = HashMap<UUID, Int>()
+        try {
+            ds.connection.use { conn: Connection ->
+                val rs = conn.prepareStatement(SELECT_ALL_FROM_PLAYER_PROGRESS).executeQuery()
+                while(rs.next()){
+                    val key = UUID.fromString(rs.getString("player_uuid"))
+                    val value = rs.getInt("chest_location")
+                    map[key] = value
+                }
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get all player progress from database async")
+            e.printStackTrace()
+        }
+        map
+    }
+
+    fun getPlayerProgress(playerUuid: UUID): Int? {
+        try {
+            ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(SELECT_PLAYER_PROCESS).apply {
+                    setString(1, playerUuid.toString())
+                }
+                val rs = prep.executeQuery()
+                if(rs.next()){
+                    return rs.getInt("progress")
+                }
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database")
+            e.printStackTrace()
+        }
+        return null
+    }
+
+    // UPDATE
+
     fun updateInventory(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
@@ -241,6 +297,22 @@ class SQLite(plugin: Plugin) {
             }
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}ERROR: An exception occurred while updating an inventory to the database")
+            e.printStackTrace()
+        }
+    }
+
+    fun updateChestOrder(location: Location, newOrder: Int) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            ds.connection.use { conn: Connection ->
+                val prep = conn.prepareStatement(UPDATE_QUEST_CHEST_ORDER).apply {
+                    setInt(1, newOrder)
+                    setString(2, jsonLoc.toJson(location))
+                }
+                prep.execute()
+                conn.commit()
+            }
+        } catch (e: SQLException) {
+            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while updating chest order of ${location.prettyString()} to the database")
             e.printStackTrace()
         }
     }
@@ -259,17 +331,22 @@ class SQLite(plugin: Plugin) {
         val hikariConfig = HikariConfig().apply { isAutoCommit = false }
 
         // create tables
-        const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150) PRIMARY KEY);"
+        const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150), chest_order INTEGER NOT NULL PRIMARY KEY);"
         const val CREATE_CHEST_CONTENT = "CREATE TABLE IF NOT EXISTS chestContents(id INTEGER PRIMARY KEY, chest_location INTEGER NOT NULL, player_uuid VARCHAR(60) NOT NULL, inventory VARCHAR(500000) NOT NULL, FOREIGN KEY(chest_location) REFERENCES questChests(location));"
+        const val CREATE_PLAYER_PROGRESS = "CREATE TABLE IF NOT EXISTS playerProgress(player_uuid VARCHAR(60) NOT NULL PRIMARY KEY, progress INTEGER NOT NULL);"
         const val CREATE_TRIGGER = "CREATE TRIGGER IF NOT EXISTS removeInventories BEFORE DELETE ON questChests FOR EACH ROW BEGIN DELETE FROM chestContents WHERE chestContents.chest_location = OLD.location; END"
         // selects
         const val SELECT_ALL_FROM_QUEST_CHEST = "SELECT * FROM questChests;"
         const val SELECT_ALL_FROM_CHEST_CONTENT = "SELECT chest_location, player_uuid, inventory FROM chestContents;"
+        const val SELECT_ALL_FROM_PLAYER_PROGRESS = "SELECT * FROM playerProgress;"
         const val SELECT_CHEST_CONTENT = "SELECT inventory FROM chestContents WHERE chest_location = ? AND player_uuid = ? LIMIT 1;"
+        const val SELECT_PLAYER_PROCESS = "SELECT progress FROM playerProgress WHERE player_uuid = ? LIMIT 1;"
         // inserts
-        const val INSERT_QUEST_CHEST = "INSERT INTO questChests(location) VALUES (?);"
+        const val INSERT_QUEST_CHEST = "INSERT INTO questChests(location, chest_order) VALUES (?, ?);"
         const val INSERT_CHEST_CONTENTS = "INSERT INTO chestContents(chest_location, player_uuid, inventory) VALUES (?, ?, ?);"
+        const val INSERT_PLAYER_PROGRESS = "INSERT INTO playerProgress(player_uuid, progress) VALUES (?, ?);"
         // updates
+        const val UPDATE_QUEST_CHEST_ORDER = "UPDATE questChests SET chest_order = ? WHERE location = ?;"
         const val UPDATE_CHEST_CONTENTS = "UPDATE chestContents SET inventory = ? WHERE chest_location = ? AND player_uuid = ?;"
         // removes
         const val REMOVE_QUEST_CHESTS_OF_WORLD = "DELETE FROM questChests WHERE location LIKE ?;"

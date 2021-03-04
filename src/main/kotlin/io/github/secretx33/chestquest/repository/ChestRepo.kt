@@ -4,6 +4,7 @@ import io.github.secretx33.chestquest.database.SQLite
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.clone
 import io.github.secretx33.chestquest.utils.locationByAllMeans
+import io.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,18 +16,20 @@ import org.bukkit.inventory.Inventory
 import org.koin.core.component.KoinApiExtension
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.NoSuchElementException
 
 @KoinApiExtension
 class ChestRepo(private val db: SQLite) {
 
     private val tempChestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
-    private val questChests: MutableSet<Location> = ConcurrentHashMap.newKeySet()
+    private val questChests: MutableMap<Location, Int> = ConcurrentHashMap()
 
     init { loadDataFromDB() }
 
     private fun loadDataFromDB() = CoroutineScope(Dispatchers.Default).launch {
-        questChests.addAll(db.getAllQuestChestsAsync().await())
+        questChests.clear()
+        questChests.putAll(db.getAllQuestChestsAsync().await())
     }
 
     fun getChestContent(chest: Chest, player: Player): Inventory {
@@ -87,16 +90,33 @@ class ChestRepo(private val db: SQLite) {
 
     fun isVirtualInventory(inv: Inventory): Boolean = isTempChestInventory(inv) || isChestInventory(inv)
 
-    fun isQuestChest(location: Location): Boolean = questChests.contains(location)
+    fun isQuestChest(location: Location): Boolean = questChests.containsKey(location)
 
-    fun addQuestChest(location: Location) {
-        questChests.add(location)
-        db.addQuestChest(location)
+    fun addQuestChest(location: Location, order: Int) {
+        questChests[location] = order
+        db.addQuestChest(location, order)
     }
+
+    /**
+     * Used to change a quest chest order
+     * @param location Location The location of the chest having its order changed
+     * @param newOrder Int The new order that is going to replace the old one
+     * @return Int The old order
+     */
+    fun changeOrderQuestChest(location: Location, newOrder: Int): Int {
+        questChests[location]!!.let { order ->
+            if(order == newOrder) return order
+            questChests[location] = newOrder
+            db.updateChestOrder(location, newOrder)
+            return order
+        }
+    }
+
+    fun getQuestChestOrder(location: Location): Int = questChests[location] ?: throw NoSuchElementException("Chest ${location.prettyString()} was not found")
 
     fun removeQuestChest(location: Location) = CoroutineScope(Dispatchers.Default).launch {
         questChests.remove(location)
-        chestContents.toMap().filterKeys { pair -> pair.first == location }.forEach { chestContents.remove(it.key) }
+        chestContents.toMap().filterKeys { it.first == location }.forEach { chestContents.remove(it.key) }
         db.removeQuestChest(location)
     }
 }

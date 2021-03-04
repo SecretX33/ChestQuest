@@ -1,9 +1,9 @@
 package io.github.secretx33.chestquest.events
 
 import io.github.secretx33.chestquest.repository.ChestRepo
+import io.github.secretx33.chestquest.repository.PlayerProgressRepo
 import io.github.secretx33.chestquest.utils.Utils.debugMessage
 import io.github.secretx33.chestquest.utils.canEditQC
-import io.github.secretx33.chestquest.utils.canOpenQC
 import io.github.secretx33.chestquest.utils.isChest
 import org.bukkit.Bukkit
 import org.bukkit.block.Chest
@@ -16,7 +16,7 @@ import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
 
 @KoinApiExtension
-class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener {
+class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo, private val progressRepo: PlayerProgressRepo) : Listener {
 
     init { Bukkit.getPluginManager().registerEvents(this, plugin) }
 
@@ -24,14 +24,18 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listene
     private fun onInteract(event: PlayerInteractEvent) {
         if(!event.isChestQuest()) return
 
-        val chest = event.clickedBlock?.state as Chest
         val player = event.player
+        if(player.canEditQC()) return
 
-        if(!player.canOpenQC()) {
+        val chest = event.clickedBlock?.state as Chest
+        val chestOrder = chestRepo.getQuestChestOrder(chest.location)
+
+        debugMessage("0. Chest order is $chestOrder")
+
+        if(!progressRepo.canOpenChest(player.uniqueId, chestOrder)) {
             event.isCancelled = true
-            player.openInventory(chestRepo.getTempChestContent(chest, player))
-            debugMessage("Player ${player.name} doesn't have permission to open any Quest Chest, displaying an empty chest to him")
-        } else if(!player.canEditQC()) {
+            debugMessage("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player.uniqueId)}, he cannot open a chest that has a order of $chestOrder")
+        } else {
             event.isCancelled = true
             player.openInventory(chestRepo.getChestContent(chest, player))
             debugMessage("Altered interaction with chest")

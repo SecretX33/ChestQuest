@@ -22,24 +22,21 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private fun onItemDrag(event: InventoryDragEvent){
-        debugMessage("0. Who clicked is ${event.whoClicked.name}, inventory type is ${event.inventory.type}")
-
         val inv = event.inventory
         val topInvSize = event.view.topInventory.size
         val editingTopInv = event.rawSlots.toSet().any { it < topInvSize }
 
         if(editingTopInv && inv.isChest() && chestRepo.isVirtualInventory(inv)){
             event.isCancelled = true
-            debugMessage("0. Canceled DragEvent")
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private fun onItemMove(event: InventoryClickEvent) {
         if(event.clickedInventory == null) return
-        debugMessage("1. ${event.whoClicked.name} clicked on [${event.action?.name}] CI ${event.clickedInventory.type?.name} (I ${event.inventory?.type?.name}) at ${event.clickedInventory?.location != null}")
+        /*debugMessage("1. ${event.whoClicked.name} clicked on [${event.action?.name}] CI ${event.clickedInventory.type?.name} (I ${event.inventory?.type?.name}) at ${event.clickedInventory?.location != null}")
         if (event.isPickAction()) debugMessage("1. Is pickup")
-        if (event.isPutAction()) debugMessage("1. Is put action")
+        if (event.isPutAction()) debugMessage("1. Is put action")*/
 
         val inv = event.inventory
         if (event.isPutAction() && inv.isChest() && chestRepo.isVirtualInventory(inv)){
@@ -54,8 +51,8 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         val inv = event.inventory
         val player = event.whoClicked as Player
 
-        if((event.isPickAction() || event.isSwapInside()) && inv.isChest() && chestRepo.isChestInventory(inv)){
-            debugMessage("2. Registered pickup/swap actions, saving to prevent exploits")
+        if(event.isPickAction() && inv.isChest() && chestRepo.isChestInventory(inv)){
+            debugMessage("2. Registered pickup actions, saving to prevent exploits")
             chestRepo.updateInventory(player.uniqueId, inv)
         }
     }
