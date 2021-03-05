@@ -8,7 +8,6 @@ import com.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Chest
 import org.bukkit.entity.Player

@@ -38,7 +38,7 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         val inv = event.inventory
         if (event.isPutAction() && inv.isChest() && chestRepo.isVirtualInventory(inv)){
             event.isCancelled = true
-            debugMessage("1. Canceling put action")
+            debugMessage("Canceling put action of ${event.whoClicked.name}")
         }
     }
 
@@ -49,7 +49,7 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         val player = event.whoClicked as Player
 
         if(event.isPickAction() && inv.isChest() && chestRepo.isChestInventory(inv)){
-            debugMessage("2. Registered pickup actions, saving to prevent exploits")
+            debugMessage("Registered pickup actions of ${player.name}, saving to prevent exploits")
             chestRepo.updateInventory(player.uniqueId, inv)
         }
     }

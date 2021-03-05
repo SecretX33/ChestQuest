@@ -3,14 +3,12 @@ package com.github.secretx33.chestquest.utils
 import com.google.common.base.Objects
 import com.google.common.base.Preconditions
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
 import java.io.*
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap

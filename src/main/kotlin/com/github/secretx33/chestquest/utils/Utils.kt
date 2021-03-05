@@ -26,7 +26,6 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Block
-import org.bukkit.block.Chest
 import org.bukkit.block.Container
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
