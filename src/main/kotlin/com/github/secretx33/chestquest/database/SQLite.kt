@@ -1,13 +1,13 @@
-package io.github.secretx33.chestquest.database
+package com.github.secretx33.chestquest.database
 
+import com.github.secretx33.chestquest.config.Config
+import com.github.secretx33.chestquest.utils.Utils.consoleMessage
+import com.github.secretx33.chestquest.utils.Utils.debugMessage
+import com.github.secretx33.chestquest.utils.prettyString
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.github.secretx33.chestquest.config.Config
-import io.github.secretx33.chestquest.utils.Utils.consoleMessage
-import io.github.secretx33.chestquest.utils.Utils.debugMessage
-import io.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.*
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
@@ -54,7 +54,7 @@ class SQLite(plugin: Plugin) {
     // ADD
 
     fun addQuestChest(chestLoc: Location, chestOrder: Int) = CoroutineScope(Dispatchers.IO).launch {
-        require(chestOrder >= 1) { consoleMessage("Chest order cannot be less than 1, actual value is $chestOrder") }
+        require(chestOrder >= 1) { "Chest order cannot be less than 1, actual value is $chestOrder" }
         try {
             ds.connection.use { conn: Connection ->
                 val temp = jsonLoc.toJson(chestLoc)
@@ -90,7 +90,7 @@ class SQLite(plugin: Plugin) {
     }
 
     fun addPlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
-        require(progress >= 0) { consoleMessage("Progress has to be at least 0. Actual value if $progress") }
+        require(progress >= 0) { "Progress has to be at least 0. Actual value if $progress" }
         try {
             ds.connection.use { conn: Connection ->
                 val prep = conn.prepareStatement(INSERT_PLAYER_PROGRESS).apply {
@@ -244,24 +244,6 @@ class SQLite(plugin: Plugin) {
         chestMap
     }
 
-    fun getAllChestContentsAsync(): Deferred<Map<Pair<Location, UUID>, Inventory>> = CoroutineScope(Dispatchers.IO).async {
-        val map = HashMap<Pair<Location, UUID>, Inventory>()
-        try {
-            ds.connection.use { conn: Connection ->
-                val rs = conn.prepareStatement(SELECT_ALL_FROM_CHEST_CONTENT).executeQuery()
-                while(rs.next()){
-                    val key = Pair(jsonLoc.fromJson(rs.getString("chest_location"))!!, UUID.fromString(rs.getString("player_uuid")))
-                    val value = jsonInv.fromJson(rs.getString("inventory"))!!
-                    map[key] = value
-                }
-            }
-        } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get all chest contents from database async")
-            e.printStackTrace()
-        }
-        map
-    }
-
     /**
      * Get all entries of database for Player Progress table, which stores player progress in the quest chain
      * @return Deferred<Map<UUID, Int>> UUID is the player UUID, and Int is his progress in the quest chain, used to prevent him of opening chests that have higher number than the player progress + 1
@@ -373,7 +355,6 @@ class SQLite(plugin: Plugin) {
         const val CREATE_TRIGGER = "CREATE TRIGGER IF NOT EXISTS removeInventories BEFORE DELETE ON questChests FOR EACH ROW BEGIN DELETE FROM chestContents WHERE chestContents.chest_location = OLD.location; END"
         // selects
         const val SELECT_ALL_FROM_QUEST_CHEST = "SELECT * FROM questChests;"
-        const val SELECT_ALL_FROM_CHEST_CONTENT = "SELECT chest_location, player_uuid, inventory FROM chestContents;"
         const val SELECT_ALL_FROM_PLAYER_PROGRESS = "SELECT * FROM playerProgress;"
         const val SELECT_CHEST_CONTENT = "SELECT inventory FROM chestContents WHERE chest_location = ? AND player_uuid = ? LIMIT 1;"
         const val SELECT_PLAYER_PROCESS = "SELECT progress FROM playerProgress WHERE player_uuid = ? LIMIT 1;"

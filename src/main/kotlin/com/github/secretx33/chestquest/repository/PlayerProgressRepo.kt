@@ -1,7 +1,7 @@
-package io.github.secretx33.chestquest.repository
+package com.github.secretx33.chestquest.repository
 
-import io.github.secretx33.chestquest.database.SQLite
-import io.github.secretx33.chestquest.utils.Utils
+import com.github.secretx33.chestquest.database.SQLite
+import com.github.secretx33.chestquest.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

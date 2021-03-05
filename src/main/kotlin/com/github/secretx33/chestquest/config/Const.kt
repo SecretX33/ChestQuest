@@ -1,4 +1,4 @@
-package io.github.secretx33.chestquest.config
+package com.github.secretx33.chestquest.config
 
 import org.bukkit.ChatColor
 

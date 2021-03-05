@@ -1,7 +1,6 @@
-package io.github.secretx33.chestquest.config
+package com.github.secretx33.chestquest.config
 
-import io.github.secretx33.chestquest.utils.Utils.consoleMessage
-import io.github.secretx33.chestquest.utils.Utils.debugMessage
+import com.github.secretx33.chestquest.utils.Utils.consoleMessage
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension

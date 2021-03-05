@@ -1,13 +1,13 @@
-package io.github.secretx33.chestquest.commands
+package com.github.secretx33.chestquest.commands
 
-import io.github.secretx33.chestquest.config.Config
-import io.github.secretx33.chestquest.config.Const.CONFIGS_RELOADED
-import io.github.secretx33.chestquest.config.Const.DEBUG_MODE_STATE_CHANGED
-import io.github.secretx33.chestquest.config.Const.PLUGIN_COMMAND_PREFIX
-import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.repository.PlayerProgressRepo
-import io.github.secretx33.chestquest.utils.*
-import io.github.secretx33.chestquest.utils.Utils.consoleMessage
+import com.github.secretx33.chestquest.config.Config
+import com.github.secretx33.chestquest.config.Const.CONFIGS_RELOADED
+import com.github.secretx33.chestquest.config.Const.DEBUG_MODE_STATE_CHANGED
+import com.github.secretx33.chestquest.config.Const.PLUGIN_COMMAND_PREFIX
+import com.github.secretx33.chestquest.repository.ChestRepo
+import com.github.secretx33.chestquest.repository.PlayerProgressRepo
+import com.github.secretx33.chestquest.utils.*
+import com.github.secretx33.chestquest.utils.Utils.consoleMessage
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.command.Command

@@ -1,10 +1,10 @@
-package io.github.secretx33.chestquest.repository
+package com.github.secretx33.chestquest.repository
 
-import io.github.secretx33.chestquest.database.SQLite
-import io.github.secretx33.chestquest.utils.Utils.debugMessage
-import io.github.secretx33.chestquest.utils.clone
-import io.github.secretx33.chestquest.utils.locationByAllMeans
-import io.github.secretx33.chestquest.utils.prettyString
+import com.github.secretx33.chestquest.database.SQLite
+import com.github.secretx33.chestquest.utils.Utils.debugMessage
+import com.github.secretx33.chestquest.utils.clone
+import com.github.secretx33.chestquest.utils.locationByAllMeans
+import com.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,7 +21,7 @@ import kotlin.NoSuchElementException
 @KoinApiExtension
 class ChestRepo(private val db: SQLite) {
 
-    private val tempChestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
+//    private val tempChestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val questChests: MutableMap<Location, Int> = ConcurrentHashMap()
 
@@ -47,26 +47,26 @@ class ChestRepo(private val db: SQLite) {
         }
     }
 
-    fun getTempChestContent(chest: Chest, player: Player): Inventory {
-        val key = Pair(chest.location, player.uniqueId)
-        return tempChestContents.getOrPut(key) {
-            debugMessage("Cloned inventory for player that cannot edit chests")
-            Bukkit.createInventory(chest.inventory.holder, chest.inventory.type)
-        }
-    }
-
-    fun removeTempChestContent(playerUuid: UUID, chestLoc: Location? = null) = CoroutineScope(Dispatchers.Default).launch {
-        if(chestLoc == null) {
-            debugMessage("WARNING: Inside removeTempChestContent, chestLoc came null")
-            tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
-        } else {
-            tempChestContents.remove(Pair(chestLoc, playerUuid))
-        }
-    }
+//    fun getTempChestContent(chest: Chest, player: Player): Inventory {
+//        val key = Pair(chest.location, player.uniqueId)
+//        return tempChestContents.getOrPut(key) {
+//            debugMessage("Cloned inventory for player that cannot edit chests")
+//            Bukkit.createInventory(chest.inventory.holder, chest.inventory.type)
+//        }
+//    }
+//
+//    fun removeTempChestContent(playerUuid: UUID, chestLoc: Location? = null) = CoroutineScope(Dispatchers.Default).launch {
+//        if(chestLoc == null) {
+//            debugMessage("WARNING: Inside removeTempChestContent, chestLoc came null")
+//            tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
+//        } else {
+//            tempChestContents.remove(Pair(chestLoc, playerUuid))
+//        }
+//    }
 
     fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
         chestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> chestContents.remove(key) }
-        tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
+//        tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
     }
 
     fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.Default).launch {
@@ -76,7 +76,7 @@ class ChestRepo(private val db: SQLite) {
             if(list.isNotEmpty()){
                 debugMessage("INFO: Localization came from 'transformation on chestContents' and it is $location")
                 location = list[0]
-            } else{
+            } else {
                 debugMessage("WARNING: Could not infer location of inventory not even from chestContents, inventory was NOT saved")
                 return@launch
             }
@@ -86,9 +86,9 @@ class ChestRepo(private val db: SQLite) {
 
     fun isChestInventory(inv: Inventory): Boolean = chestContents.containsValue(inv)
 
-    fun isTempChestInventory(inv: Inventory): Boolean = tempChestContents.containsValue(inv)
+//    fun isTempChestInventory(inv: Inventory): Boolean = tempChestContents.containsValue(inv)
 
-    fun isVirtualInventory(inv: Inventory): Boolean = isTempChestInventory(inv) || isChestInventory(inv)
+    fun isVirtualInventory(inv: Inventory): Boolean = /*isTempChestInventory(inv) ||*/ isChestInventory(inv)
 
     fun isQuestChest(location: Location): Boolean = questChests.containsKey(location)
 

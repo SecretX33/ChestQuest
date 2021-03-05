@@ -1,8 +1,8 @@
-package io.github.secretx33.chestquest.events
+package com.github.secretx33.chestquest.events
 
-import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.utils.Utils.debugMessage
-import io.github.secretx33.chestquest.utils.isChest
+import com.github.secretx33.chestquest.repository.ChestRepo
+import com.github.secretx33.chestquest.utils.Utils.debugMessage
+import com.github.secretx33.chestquest.utils.isChest
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -34,9 +34,6 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private fun onItemMove(event: InventoryClickEvent) {
         if(event.clickedInventory == null) return
-        /*debugMessage("1. ${event.whoClicked.name} clicked on [${event.action?.name}] CI ${event.clickedInventory.type?.name} (I ${event.inventory?.type?.name}) at ${event.clickedInventory?.location != null}")
-        if (event.isPickAction()) debugMessage("1. Is pickup")
-        if (event.isPutAction()) debugMessage("1. Is put action")*/
 
         val inv = event.inventory
         if (event.isPutAction() && inv.isChest() && chestRepo.isVirtualInventory(inv)){
@@ -68,8 +65,7 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         return false
     }
 
-    private fun InventoryClickEvent.isSwapInside(): Boolean = action == InventoryAction.SWAP_WITH_CURSOR && clickedInventory.type != InventoryType.PLAYER && inventory.type != InventoryType.PLAYER
-
+//    private fun InventoryClickEvent.isSwapInside(): Boolean = action == InventoryAction.SWAP_WITH_CURSOR && clickedInventory.type != InventoryType.PLAYER && inventory.type != InventoryType.PLAYER
 
     private fun InventoryClickEvent.isPutAction(): Boolean {
         // shift click on item in player inventory

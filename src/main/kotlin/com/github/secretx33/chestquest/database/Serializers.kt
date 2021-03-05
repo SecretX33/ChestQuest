@@ -1,8 +1,8 @@
-package io.github.secretx33.chestquest.database
+package com.github.secretx33.chestquest.database
 
+import com.github.secretx33.chestquest.utils.Utils.reflections
+import com.github.secretx33.chestquest.utils.locationByAllMeans
 import com.squareup.moshi.*
-import io.github.secretx33.chestquest.utils.Utils.reflections
-import io.github.secretx33.chestquest.utils.locationByAllMeans
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Container

@@ -1,11 +1,10 @@
-package io.github.secretx33.chestquest.events
+package com.github.secretx33.chestquest.events
 
-import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.utils.Utils.consoleMessage
-import io.github.secretx33.chestquest.utils.Utils.debugMessage
-import io.github.secretx33.chestquest.utils.coordinates
-import io.github.secretx33.chestquest.utils.isQuestChest
-import io.github.secretx33.chestquest.utils.message
+import com.github.secretx33.chestquest.repository.ChestRepo
+import com.github.secretx33.chestquest.utils.Utils.consoleMessage
+import com.github.secretx33.chestquest.utils.coordinates
+import com.github.secretx33.chestquest.utils.isQuestChest
+import com.github.secretx33.chestquest.utils.message
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -23,8 +22,6 @@ class BreakChestEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listen
     private fun onInteract(event: BlockBreakEvent) {
         val player = event.player
         val block = event.block
-
-        debugMessage("Event broken detected ${block.type} by ${player.name} at ${block.coordinates()}")
 
         if(block.isQuestChest()){
             chestRepo.removeQuestChest(block.location)

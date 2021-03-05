@@ -1,4 +1,4 @@
-package io.github.secretx33.chestquest.utils
+package com.github.secretx33.chestquest.utils
 
 import com.google.common.base.Objects
 import com.google.common.base.Preconditions
@@ -20,15 +20,9 @@ class Reflections {
     private val gson = Gson()
     private val version: String = Bukkit.getServer().javaClass.getPackage().name.replace(".", ",").split(",").toTypedArray()[3] + "."
     private val CraftItemStack: Class<*> = getBukkitClass("inventory.CraftItemStack")
-    private val NMS_Entity: Class<*> = getNMSClass("Entity")
     private val NMS_ItemStack: Class<*> = getNMSClass("ItemStack")
     private val NBTTagCompound: Class<*> = getNMSClass("NBTTagCompound")
     private val NBTCompressedStreamTools: Class<*> = getNMSClass("NBTCompressedStreamTools")
-    private val CraftInventory: Class<*> = getBukkitClass("inventory.CraftInventory")
-    private val IInventory: Class<*> = getNMSClass("IInventory")
-    private val TileEntity: Class<*> = getNMSClass("TileEntity")
-    private val TileEntityContainer: Class<*> = getNMSClass("TileEntityContainer")
-    private val TileEntityChest: Class<*> = getNMSClass("TileEntityChest")
 
     private fun getBukkitClass(bukkitClassString: String): Class<*> {
         val name = "org.bukkit.craftbukkit.$version$bukkitClassString"
@@ -88,27 +82,6 @@ class Reflections {
         return CraftItemStack.method("asCraftCopy", ItemStack::class.java).invoke(CraftItemStack, stack) as ItemStack
     }
 
-    fun getNMSItemStack(item: Any): Any? {
-        if (NMS_ItemStack.isInstance(item)) return NMS_ItemStack.cast(item)
-        val itemStack = item as ItemStack
-        try {
-            return CraftItemStack.method("asNMSCopy", ItemStack::class.java).invoke(CraftItemStack, itemStack)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
-    }
-
-    private fun setValueOnFinalField(field: Field, `object`: Any, newValue: Any) {
-        field.isAccessible = true
-        try {
-            Field::class.java.field("modifiers").setInt(field, field.modifiers and Modifier.FINAL.inv())
-            field[`object`] = newValue
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     private fun getNBTTagFromInputStream(inputStream: InputStream): Any? {
         try {
             val readTag_NBTCompStreamTools = NBTCompressedStreamTools.method("a", InputStream::class.java)
@@ -134,17 +107,6 @@ class Reflections {
             val nmsItem = CraftItemStack.method("asNMSCopy", ItemStack::class.java).invoke(getCraftItemStack(stack), stack)
             NMS_ItemStack.method("save", NBTTagCompound).invoke(nmsItem, NBTTag)
             return NBTTag
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return Any()
-    }
-
-    fun deserializeNBTTag(stringNBTTag: String): Any {
-        val inputStream = ByteArrayInputStream(gson.fromJson(stringNBTTag, object : TypeToken<ByteArray>() {}.type))
-        try {
-            val NBTTag = NBTCompressedStreamTools.method("a", InputStream::class.java).invoke(NBTCompressedStreamTools, inputStream)
-            if (NBTTag != null) return NBTTag
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -184,9 +146,7 @@ class Reflections {
                 VersionUtil.serverVersion.isLowerThanOrEqualTo(VersionUtil.v1_12_2_R01) -> {
                     NMS_ItemStack.constructor(NBTTagCompound).newInstance(NBTTag)
                 }
-                else -> {
-                    NMS_ItemStack.method("a", NBTTagCompound).invoke(NMS_ItemStack, NBTTag)
-                }
+                else -> NMS_ItemStack.method("a", NBTTagCompound).invoke(NMS_ItemStack, NBTTag)
             }
 
             // And returning its mirrored CraftItemStack

@@ -14,14 +14,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with GoldenLasso.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.secretx33.chestquest.utils
+package com.github.secretx33.chestquest.utils
 
-import io.github.secretx33.chestquest.config.Config
-import io.github.secretx33.chestquest.config.Const.PLUGIN_CHAT_PREFIX
-import io.github.secretx33.chestquest.config.Const.PLUGIN_PERMISSION_PREFIX
-import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.utils.Utils.chestRepo
-import io.github.secretx33.chestquest.utils.Utils.reflections
+import com.github.secretx33.chestquest.config.Config
+import com.github.secretx33.chestquest.config.Const.PLUGIN_CHAT_PREFIX
+import com.github.secretx33.chestquest.config.Const.PLUGIN_PERMISSION_PREFIX
+import com.github.secretx33.chestquest.repository.ChestRepo
+import com.github.secretx33.chestquest.utils.Utils.chestRepo
+import com.github.secretx33.chestquest.utils.Utils.reflections
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -30,7 +30,6 @@ import org.bukkit.block.Chest
 import org.bukkit.block.Container
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
-import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
@@ -60,9 +59,6 @@ fun Inventory.clone(): Inventory {
     }
     return cloned
 }
-
-@KoinApiExtension
-fun Chest.clone(): Inventory = this.inventory.clone()
 
 fun CommandSender.message(msg: String) = this.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
 

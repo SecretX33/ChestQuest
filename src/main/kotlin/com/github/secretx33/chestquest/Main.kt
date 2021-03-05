@@ -1,13 +1,13 @@
-package io.github.secretx33.chestquest
+package com.github.secretx33.chestquest
 
-import io.github.secretx33.chestquest.commands.Commands
-import io.github.secretx33.chestquest.config.Config
-import io.github.secretx33.chestquest.database.SQLite
-import io.github.secretx33.chestquest.events.*
-import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.repository.PlayerProgressRepo
-import io.github.secretx33.chestquest.utils.Reflections
-import io.github.secretx33.chestquest.utils.Utils.consoleMessage
+import com.github.secretx33.chestquest.commands.Commands
+import com.github.secretx33.chestquest.config.Config
+import com.github.secretx33.chestquest.database.SQLite
+import com.github.secretx33.chestquest.events.*
+import com.github.secretx33.chestquest.repository.ChestRepo
+import com.github.secretx33.chestquest.repository.PlayerProgressRepo
+import com.github.secretx33.chestquest.utils.Reflections
+import com.github.secretx33.chestquest.utils.Utils.consoleMessage
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.koin.core.component.KoinApiExtension

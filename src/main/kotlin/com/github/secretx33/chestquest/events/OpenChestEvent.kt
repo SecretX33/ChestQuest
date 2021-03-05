@@ -1,10 +1,10 @@
-package io.github.secretx33.chestquest.events
+package com.github.secretx33.chestquest.events
 
-import io.github.secretx33.chestquest.repository.ChestRepo
-import io.github.secretx33.chestquest.repository.PlayerProgressRepo
-import io.github.secretx33.chestquest.utils.Utils.debugMessage
-import io.github.secretx33.chestquest.utils.canEditQC
-import io.github.secretx33.chestquest.utils.isChest
+import com.github.secretx33.chestquest.repository.ChestRepo
+import com.github.secretx33.chestquest.repository.PlayerProgressRepo
+import com.github.secretx33.chestquest.utils.Utils.debugMessage
+import com.github.secretx33.chestquest.utils.canEditQC
+import com.github.secretx33.chestquest.utils.isChest
 import org.bukkit.Bukkit
 import org.bukkit.block.Chest
 import org.bukkit.event.EventHandler
