@@ -132,7 +132,7 @@ class Reflections {
         try {
             val NBTTag = NBTTagCompound.newInstance()
             val nmsItem = CraftItemStack.method("asNMSCopy", ItemStack::class.java).invoke(getCraftItemStack(stack), stack)
-            NMS_ItemStack.getDeclaredMethod("save", NBTTagCompound).invoke(nmsItem, NBTTag)
+            NMS_ItemStack.method("save", NBTTagCompound).invoke(nmsItem, NBTTag)
             return NBTTag
         } catch (e: Exception) {
             e.printStackTrace()
@@ -143,7 +143,7 @@ class Reflections {
     fun deserializeNBTTag(stringNBTTag: String): Any {
         val inputStream = ByteArrayInputStream(gson.fromJson(stringNBTTag, object : TypeToken<ByteArray>() {}.type))
         try {
-            val NBTTag = NBTCompressedStreamTools.getDeclaredMethod("a", InputStream::class.java).invoke(NBTCompressedStreamTools, inputStream)
+            val NBTTag = NBTCompressedStreamTools.method("a", InputStream::class.java).invoke(NBTCompressedStreamTools, inputStream)
             if (NBTTag != null) return NBTTag
         } catch (e: Exception) {
             e.printStackTrace()
