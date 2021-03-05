@@ -57,6 +57,18 @@ tasks.shadowJar {
     archiveFileName.set(rootProject.name + ".jar")
 //    mergeServiceFiles()
 //    exclude("module-info.class")
+    relocate("com.zaxxer.hikari", "com.github.secretx33.dependencies.hikari")
+    relocate("com.squareup.moshi", "com.github.secretx33.dependencies.moshi")
+    relocate("org.koin", "com.github.secretx33.dependencies.koin")
+    relocate("org.sqlite", "com.github.secretx33.dependencies.sqlite")
+    relocate("org.slf4j", "com.github.secretx33.dependencies.slf4j")
+    relocate("okio", "com.github.secretx33.dependencies.okio")
+    relocate("kotlin", "com.github.secretx33.dependencies.kotlin")
+    relocate("kotlinx", "com.github.secretx33.dependencies.kotlinx")
+    relocate("org.jetbrains", "com.github.secretx33.dependencies.jetbrains")
+    relocate("org.intellij", "com.github.secretx33.dependencies.jetbrains.intellij")
+    exclude("DebugProbesKt.bin")
+    exclude("META-INF/**")
 }
 
 tasks.register("customCleanUp", Delete::class){
