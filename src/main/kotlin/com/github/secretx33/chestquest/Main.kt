@@ -45,7 +45,7 @@ class Main : JavaPlugin(), CustomKoinComponent {
 
     override fun onDisable() {
         get<SQLite>().close()
-        getKoin().unloadModules(listOf(mod))
-        getKoin().close()
+        unloadKoinModules(mod)
+        stopKoin()
     }
 }

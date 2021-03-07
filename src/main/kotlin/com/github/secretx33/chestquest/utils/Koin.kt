@@ -26,7 +26,7 @@ object CustomScope : KoinContext {
 
     override fun register(koinApplication: KoinApplication) {
         if (_koin != null) {
-            throw KoinAppAlreadyStartedException("A Koin Application has already been started")
+            throw KoinAppAlreadyStartedException("A Custom Koin Application has already been started")
         }
         _koin = koinApplication.koin
     }
@@ -81,7 +81,6 @@ object CustomScope : KoinContext {
         get().unloadModules(modules)
     }
 }
-
 
 /**
  * Start a Koin Application as StandAlone
