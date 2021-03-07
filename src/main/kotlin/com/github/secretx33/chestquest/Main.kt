@@ -6,35 +6,32 @@ import com.github.secretx33.chestquest.database.SQLite
 import com.github.secretx33.chestquest.events.*
 import com.github.secretx33.chestquest.repository.ChestRepo
 import com.github.secretx33.chestquest.repository.PlayerProgressRepo
-import com.github.secretx33.chestquest.utils.Reflections
+import com.github.secretx33.chestquest.utils.*
 import com.github.secretx33.chestquest.utils.Utils.consoleMessage
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
-import org.koin.core.component.inject
-import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
 @KoinApiExtension
-class Main : JavaPlugin(), KoinComponent {
+class Main : JavaPlugin(), CustomKoinComponent {
 
-    private val db by inject<SQLite>()
+    private val mod = module {
+        single<Plugin> { this@Main } bind JavaPlugin::class
+        single { get<Plugin>().server.consoleSender }
+        single { Reflections() }
+        single { SQLite(get()) }
+        single { ChestRepo(get()) }
+        single { PlayerProgressRepo(get()) }
+    }
 
     override fun onEnable() {
         saveDefaultConfig()
         startKoin {
-            printLogger()
-            modules(module {
-                single<Plugin> { this@Main } bind JavaPlugin::class
-                single { get<Plugin>().server.consoleSender }
-                single { Reflections() }
-                single { SQLite(get()) }
-                single { ChestRepo(get()) }
-                single { PlayerProgressRepo(get()) }
-            })
+            printLogger(Level.ERROR)
+            loadKoinModules(mod)
         }
         Config.reloadConfig()
         val commands = Commands(get(), get(), get())
@@ -47,6 +44,8 @@ class Main : JavaPlugin(), KoinComponent {
     }
 
     override fun onDisable() {
-        db.close()
+        get<SQLite>().close()
+        getKoin().unloadModules(listOf(mod))
+        getKoin().close()
     }
 }

@@ -1,14 +1,14 @@
 package com.github.secretx33.chestquest.config
 
+import com.github.secretx33.chestquest.utils.CustomKoinComponent
 import com.github.secretx33.chestquest.utils.Utils.consoleMessage
+import com.github.secretx33.chestquest.utils.inject
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @KoinApiExtension
-object Config : KoinComponent {
+object Config : CustomKoinComponent {
     private val plugin: Plugin by inject()
     var removeDBEntriesIfWorldIsMissing = false
     var debug: Boolean = false

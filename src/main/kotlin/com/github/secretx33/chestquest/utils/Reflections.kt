@@ -2,7 +2,6 @@ package com.github.secretx33.chestquest.utils
 
 import com.google.common.base.Objects
 import com.google.common.base.Preconditions
-import com.google.gson.Gson
 import org.bukkit.Bukkit
 import org.bukkit.inventory.ItemStack
 import java.io.*
@@ -15,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
 class Reflections {
-    private val gson = Gson()
     private val version: String = Bukkit.getServer().javaClass.getPackage().name.replace(".", ",").split(",").toTypedArray()[3] + "."
     private val CraftItemStack: Class<*> = getBukkitClass("inventory.CraftItemStack")
     private val NMS_ItemStack: Class<*> = getNMSClass("ItemStack")

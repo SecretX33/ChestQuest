@@ -38,10 +38,10 @@ class SQLite(plugin: Plugin) {
     private fun initialize() {
         try {
             ds.connection.use { conn: Connection ->
-                conn.prepareStatement(CREATE_QUEST_CHESTS).execute()
-                conn.prepareStatement(CREATE_CHEST_CONTENT).execute()
-                conn.prepareStatement(CREATE_PLAYER_PROGRESS).execute()
-                conn.prepareStatement(CREATE_TRIGGER).execute()
+                conn.prepareStatement(CREATE_QUEST_CHESTS).use { it.execute() }
+                conn.prepareStatement(CREATE_CHEST_CONTENT).use { it.execute() }
+                conn.prepareStatement(CREATE_PLAYER_PROGRESS).use { it.execute() }
+                conn.prepareStatement(CREATE_TRIGGER).use { it.execute() }
                 conn.commit()
                 debugMessage("Initiated DB")
             }
@@ -57,11 +57,11 @@ class SQLite(plugin: Plugin) {
         require(chestOrder >= 1) { "Chest order cannot be less than 1, actual value is $chestOrder" }
         try {
             ds.connection.use { conn: Connection ->
-                val temp = jsonLoc.toJson(chestLoc)
-                val prep = conn.prepareStatement(INSERT_QUEST_CHEST).apply {
-                    setString(1, temp)
+                conn.prepareStatement(INSERT_QUEST_CHEST).use { prep ->
+                    prep.setString(1, jsonLoc.toJson(chestLoc))
+                    prep.setInt(2, chestOrder)
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -75,12 +75,12 @@ class SQLite(plugin: Plugin) {
             ds.connection.use { conn: Connection ->
                 val serializedInv = jsonInv.toJson(inv)
                 debugMessage("Inventory is: $serializedInv")
-                val prep = conn.prepareStatement(INSERT_CHEST_CONTENTS).apply {
-                    setString(1, jsonLoc.toJson(chestLoc))
-                    setString(2, playerUuid.toString())
-                    setString(3, serializedInv)
+                conn.prepareStatement(INSERT_CHEST_CONTENTS).use { prep ->
+                    prep.setString(1, jsonLoc.toJson(chestLoc))
+                    prep.setString(2, playerUuid.toString())
+                    prep.setString(3, serializedInv)
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -93,11 +93,11 @@ class SQLite(plugin: Plugin) {
         require(progress >= 0) { "Progress has to be at least 0. Actual value if $progress" }
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(INSERT_PLAYER_PROGRESS).apply {
-                    setString(1, playerUuid.toString())
-                    setInt(2, progress)
+                conn.prepareStatement(INSERT_PLAYER_PROGRESS).use { prep ->
+                    prep.setString(1, playerUuid.toString())
+                    prep.setInt(2, progress)
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -111,10 +111,10 @@ class SQLite(plugin: Plugin) {
     fun removeQuestChest(chestLoc: Location) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(REMOVE_QUEST_CHEST).apply {
-                    setString(1, jsonLoc.toJson(chestLoc))
+                conn.prepareStatement(REMOVE_QUEST_CHEST).use { prep ->
+                    prep.setString(1, jsonLoc.toJson(chestLoc))
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -126,14 +126,13 @@ class SQLite(plugin: Plugin) {
     private fun removeQuestChestsByWorldUuid(worldUuids: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(REMOVE_QUEST_CHESTS_OF_WORLD)
-                worldUuids.forEach {
-                    prep.apply {
-                        setString(1, "%$it%")
-                        addBatch()
+                conn.prepareStatement(REMOVE_QUEST_CHESTS_OF_WORLD).use { prep ->
+                    worldUuids.forEach {
+                        prep.setString(1, "%$it%")
+                        prep.addBatch()
                     }
+                    prep.executeBatch()
                 }
-                prep.executeBatch()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -145,14 +144,13 @@ class SQLite(plugin: Plugin) {
     private fun removeQuestChestsByLocation(locations: Iterable<Location>) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(REMOVE_QUEST_CHEST)
-                locations.forEach { loc ->
-                    prep.apply {
-                        setString(1, jsonLoc.toJson(loc))
-                        addBatch()
+                conn.prepareStatement(REMOVE_QUEST_CHEST).use { prep ->
+                    locations.forEach { loc ->
+                        prep.setString(1, jsonLoc.toJson(loc))
+                        prep.addBatch()
                     }
+                    prep.executeBatch()
                 }
-                prep.executeBatch()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -164,10 +162,10 @@ class SQLite(plugin: Plugin) {
     fun removePlayerProgress(playerUuid: UUID) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(REMOVE_PLAYER_PROGRESS).apply {
-                    setString(1, playerUuid.toString())
+                conn.prepareStatement(REMOVE_PLAYER_PROGRESS).use { prep ->
+                    prep.setString(1, playerUuid.toString())
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -181,24 +179,26 @@ class SQLite(plugin: Plugin) {
     fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory? {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
-                    setString(1, jsonLoc.toJson(chestLoc))
-                    setString(2, playerUuid.toString())
-                }
-                val rs = prep.executeQuery()
-                if(rs.next()){
-                    val inv = jsonInv.fromJson(rs.getString("inventory"))
-                    when {
-                        inv == null -> {
-                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
+                conn.prepareStatement(SELECT_CHEST_CONTENT).use { prep ->
+                    prep.setString(1, jsonLoc.toJson(chestLoc))
+                    prep.setString(2, playerUuid.toString())
+                    val rs = prep.executeQuery()
+
+                    if(rs.next()){
+                        val inv = jsonInv.fromJson(rs.getString("inventory"))
+                        rs.close()
+                        when {
+                            inv == null -> {
+                                consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
+                            }
+                            inv.holder == null -> {
+                                consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                            }
+                            else -> return inv
                         }
-                        inv.holder == null -> {
-                            consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
-                        }
-                        else -> return inv
+                    } else {
+                        return null
                     }
-                } else {
-                    return null
                 }
             }
         } catch (e: SQLException) {
@@ -214,7 +214,8 @@ class SQLite(plugin: Plugin) {
         val chestRemoveSet = HashSet<Location>()
         try {
             ds.connection.use { conn: Connection ->
-                val rs = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST).executeQuery()
+                val prep = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST)
+                val rs = prep.executeQuery()
                 while(rs.next()){
                     val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
                     if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
@@ -230,6 +231,8 @@ class SQLite(plugin: Plugin) {
                         }
                     }
                 }
+                rs.close()
+                prep.close()
                 if(worldRemoveSet.isNotEmpty()){
                     worldRemoveSet.forEach { consoleMessage("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
                     removeQuestChestsByWorldUuid(worldRemoveSet)
@@ -252,11 +255,14 @@ class SQLite(plugin: Plugin) {
         val map = HashMap<UUID, Int>()
         try {
             ds.connection.use { conn: Connection ->
-                val rs = conn.prepareStatement(SELECT_ALL_FROM_PLAYER_PROGRESS).executeQuery()
-                while(rs.next()){
-                    val key = UUID.fromString(rs.getString("player_uuid"))
-                    val value = rs.getInt("progress")
-                    map[key] = value
+                conn.prepareStatement(SELECT_ALL_FROM_PLAYER_PROGRESS).use { prep ->
+                    val rs = prep.executeQuery()
+                    while(rs.next()){
+                        val key = UUID.fromString(rs.getString("player_uuid"))
+                        val value = rs.getInt("progress")
+                        map[key] = value
+                    }
+                    rs.close()
                 }
             }
         } catch (e: SQLException) {
@@ -269,12 +275,14 @@ class SQLite(plugin: Plugin) {
     fun getPlayerProgress(playerUuid: UUID): Int? {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(SELECT_PLAYER_PROCESS).apply {
-                    setString(1, playerUuid.toString())
-                }
-                val rs = prep.executeQuery()
-                if(rs.next()){
-                    return rs.getInt("progress")
+                conn.prepareStatement(SELECT_PLAYER_PROCESS).use { prep ->
+                    prep.setString(1, playerUuid.toString())
+
+                    prep.executeQuery().use { rs ->
+                        if(rs.next()){
+                            return rs.getInt("progress")
+                        }
+                    }
                 }
             }
         } catch (e: SQLException) {
@@ -289,12 +297,12 @@ class SQLite(plugin: Plugin) {
     fun updateInventory(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(UPDATE_CHEST_CONTENTS).apply {
-                    setString(1, jsonInv.toJson(inv))
-                    setString(2, jsonLoc.toJson(chestLoc))
-                    setString(3, playerUuid.toString())
+                conn.prepareStatement(UPDATE_CHEST_CONTENTS).use { prep ->
+                    prep.setString(1, jsonInv.toJson(inv))
+                    prep.setString(2, jsonLoc.toJson(chestLoc))
+                    prep.setString(3, playerUuid.toString())
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -306,11 +314,11 @@ class SQLite(plugin: Plugin) {
     fun updateChestOrder(location: Location, newOrder: Int) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(UPDATE_QUEST_CHEST_ORDER).apply {
-                    setInt(1, newOrder)
-                    setString(2, jsonLoc.toJson(location))
+                conn.prepareStatement(UPDATE_QUEST_CHEST_ORDER).use { prep ->
+                    prep.setInt(1, newOrder)
+                    prep.setString(2, jsonLoc.toJson(location))
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -322,11 +330,11 @@ class SQLite(plugin: Plugin) {
     fun updatePlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
         try {
             ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(UPDATE_PLAYER_PROGRESS).apply {
-                    setInt(1, progress)
-                    setString(2, playerUuid.toString())
+                conn.prepareStatement(UPDATE_PLAYER_PROGRESS).use { prep ->
+                    prep.setInt(1, progress)
+                    prep.setString(2, playerUuid.toString())
+                    prep.execute()
                 }
-                prep.execute()
                 conn.commit()
             }
         } catch (e: SQLException) {
@@ -349,7 +357,7 @@ class SQLite(plugin: Plugin) {
         val hikariConfig = HikariConfig().apply { isAutoCommit = false }
 
         // create tables
-        const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150), chest_order INTEGER NOT NULL PRIMARY KEY);"
+        const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150) NOT NULL PRIMARY KEY, chest_order INTEGER);"
         const val CREATE_CHEST_CONTENT = "CREATE TABLE IF NOT EXISTS chestContents(id INTEGER PRIMARY KEY, chest_location INTEGER NOT NULL, player_uuid VARCHAR(60) NOT NULL, inventory VARCHAR(500000) NOT NULL, FOREIGN KEY(chest_location) REFERENCES questChests(location));"
         const val CREATE_PLAYER_PROGRESS = "CREATE TABLE IF NOT EXISTS playerProgress(player_uuid VARCHAR(60) NOT NULL PRIMARY KEY, progress INTEGER NOT NULL);"
         const val CREATE_TRIGGER = "CREATE TRIGGER IF NOT EXISTS removeInventories BEFORE DELETE ON questChests FOR EACH ROW BEGIN DELETE FROM chestContents WHERE chestContents.chest_location = OLD.location; END"

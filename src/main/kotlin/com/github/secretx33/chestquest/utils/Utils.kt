@@ -1,19 +1,3 @@
-/*
-This file is part of GoldenLasso.
-
-GoldenLasso is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-GoldenLasso is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with GoldenLasso.  If not, see <https://www.gnu.org/licenses/>.
- */
 package com.github.secretx33.chestquest.utils
 
 import com.github.secretx33.chestquest.config.Config
@@ -33,11 +17,9 @@ import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.koin.core.component.KoinApiExtension
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @KoinApiExtension
-object Utils: KoinComponent {
+object Utils: CustomKoinComponent {
     private val console: ConsoleCommandSender by inject()
     val chestRepo: ChestRepo by inject()
     val reflections: Reflections by inject()
