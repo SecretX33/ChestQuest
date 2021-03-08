@@ -197,6 +197,7 @@ class SQLite(plugin: Plugin) {
                             else -> return inv
                         }
                     } else {
+                        rs.close()
                         return null
                     }
                 }
@@ -357,7 +358,7 @@ class SQLite(plugin: Plugin) {
         val hikariConfig = HikariConfig().apply { isAutoCommit = false }
 
         // create tables
-        const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150) NOT NULL PRIMARY KEY, chest_order INTEGER);"
+        const val CREATE_QUEST_CHESTS = "CREATE TABLE IF NOT EXISTS questChests(location VARCHAR(150) NOT NULL PRIMARY KEY, chest_order INTEGER NOT NULL);"
         const val CREATE_CHEST_CONTENT = "CREATE TABLE IF NOT EXISTS chestContents(id INTEGER PRIMARY KEY, chest_location INTEGER NOT NULL, player_uuid VARCHAR(60) NOT NULL, inventory VARCHAR(500000) NOT NULL, FOREIGN KEY(chest_location) REFERENCES questChests(location));"
         const val CREATE_PLAYER_PROGRESS = "CREATE TABLE IF NOT EXISTS playerProgress(player_uuid VARCHAR(60) NOT NULL PRIMARY KEY, progress INTEGER NOT NULL);"
         const val CREATE_TRIGGER = "CREATE TRIGGER IF NOT EXISTS removeInventories BEFORE DELETE ON questChests FOR EACH ROW BEGIN DELETE FROM chestContents WHERE chestContents.chest_location = OLD.location; END"
