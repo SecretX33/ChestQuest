@@ -19,6 +19,8 @@ import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
 import java.nio.file.FileSystems
 import java.sql.Connection
+import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 import java.util.regex.Pattern
@@ -33,7 +35,7 @@ class SQLite(plugin: Plugin) {
 
     init { initialize() }
 
-    fun close() = ds.close()
+    fun close() = ds.safeClose()
 
     private fun initialize() {
         try {
@@ -177,75 +179,82 @@ class SQLite(plugin: Plugin) {
     // GET
 
     fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory? {
-        try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(SELECT_CHEST_CONTENT).use { prep ->
-                    prep.setString(1, jsonLoc.toJson(chestLoc))
-                    prep.setString(2, playerUuid.toString())
-                    val rs = prep.executeQuery()
+        var conn: Connection? = null
+        var prep: PreparedStatement? = null
+        var rs: ResultSet? = null
 
-                    if(rs.next()){
-                        val inv = jsonInv.fromJson(rs.getString("inventory"))
-                        rs.close()
-                        when {
-                            inv == null -> {
-                                consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
-                            }
-                            inv.holder == null -> {
-                                consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
-                            }
-                            else -> return inv
-                        }
-                    } else {
-                        rs.close()
-                        return null
-                    }
+        try {
+            conn = ds.connection
+            prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
+                setString(1, jsonLoc.toJson(chestLoc))
+                setString(2, playerUuid.toString())
+            }
+            rs = prep.executeQuery()
+
+            if(rs.next()){
+                val inv = jsonInv.fromJson(rs.getString("inventory"))
+                when {
+                    inv == null -> consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
+                    inv.holder == null -> consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                    else -> return inv
                 }
+            } else {
+                return null
             }
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.prettyString()} from database")
             e.printStackTrace()
+        } finally {
+            rs?.safeClose()
+            prep?.safeClose()
+            conn?.safeClose()
         }
         return newEmptyInventory()
     }
 
     fun getAllQuestChestsAsync(): Deferred<Map<Location, Int>> = CoroutineScope(Dispatchers.IO).async {
-        val chestMap = HashMap<Location, Int>()
+        var conn: Connection? = null
+        var prep: PreparedStatement? = null
+        var rs: ResultSet? = null
+
+        val chests = HashMap<Location, Int>()
         val worldRemoveSet = HashSet<String>()
         val chestRemoveSet = HashSet<Location>()
+
         try {
-            ds.connection.use { conn: Connection ->
-                val prep = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST)
-                val rs = prep.executeQuery()
-                while(rs.next()){
-                    val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
-                    if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
-                        UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
-                            worldRemoveSet.add(it)
-                        }
-                    } else if(chestLoc.world != null) {
-                        if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
-                            consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
-                            chestRemoveSet.add(chestLoc)
-                        } else {
-                            chestMap[chestLoc] = rs.getInt("chest_order")
-                        }
+            conn = ds.connection
+            prep = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST)
+            rs = prep.executeQuery()
+            while(rs.next()){
+                val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
+                if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
+                    UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
+                        worldRemoveSet.add(it)
+                    }
+                } else if(chestLoc.world != null) {
+                    if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
+                        consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
+                        chestRemoveSet.add(chestLoc)
+                    } else {
+                        chests[chestLoc] = rs.getInt("chest_order")
                     }
                 }
-                rs.close()
-                prep.close()
-                if(worldRemoveSet.isNotEmpty()){
-                    worldRemoveSet.forEach { consoleMessage("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
-                    removeQuestChestsByWorldUuid(worldRemoveSet)
-                }
-                if(chestRemoveSet.isNotEmpty())
-                    removeQuestChestsByLocation(chestRemoveSet)
             }
+            if(worldRemoveSet.isNotEmpty()){
+                worldRemoveSet.forEach { consoleMessage("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
+                removeQuestChestsByWorldUuid(worldRemoveSet)
+            }
+            if(chestRemoveSet.isNotEmpty())
+                removeQuestChestsByLocation(chestRemoveSet)
         } catch (e: SQLException) {
             consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database")
             e.printStackTrace()
+        } finally {
+            rs?.safeClose()
+            prep?.safeClose()
+            conn?.safeClose()
         }
-        chestMap
+        chests
     }
 
     /**
@@ -263,7 +272,7 @@ class SQLite(plugin: Plugin) {
                         val value = rs.getInt("progress")
                         map[key] = value
                     }
-                    rs.close()
+                    rs.safeClose()
                 }
             }
         } catch (e: SQLException) {
@@ -343,6 +352,8 @@ class SQLite(plugin: Plugin) {
             e.printStackTrace()
         }
     }
+
+    private fun AutoCloseable?.safeClose() { runCatching { this?.close() } }
 
     private fun newEmptyInventory(): Inventory = Bukkit.createInventory(null, InventoryType.CHEST)
 
