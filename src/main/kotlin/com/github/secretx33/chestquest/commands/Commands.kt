@@ -14,7 +14,7 @@ import org.koin.core.component.KoinApiExtension
 import java.util.*
 
 @KoinApiExtension
-class Commands(private val plugin: JavaPlugin, private val chestRepo: ChestRepo, private val progressRepo: PlayerProgressRepo) : CommandExecutor, TabCompleter {
+class Commands(val plugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
     private val subcommands: List<SubCommand> = listOf(DebugCommand(),
         MarkCommand(),

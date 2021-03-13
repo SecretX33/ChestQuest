@@ -26,7 +26,7 @@ class ResetProgressCommand : SubCommand(), CustomKoinComponent {
 
     override fun onCommandByConsole(sender: CommandSender, strings: Array<String>) {
         if(strings.size == 1) {
-            sender.message("${ChatColor.RED}Please type a name after ${ChatColor.GOLD}reset${ChatColor.RED}. Command usage: /cq resetprogress [playerName]")
+            sender.message("${ChatColor.RED}Please type a name after ${ChatColor.GOLD}reset${ChatColor.RED}. Command usage: /cq resetprogress <playerName>")
             return
         }
         val player = Bukkit.getPlayer(strings[1])

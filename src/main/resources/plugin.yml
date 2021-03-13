@@ -1,6 +1,6 @@
 name: ${name}
 version: ${version}
-main: com.github.secretx33.chestquest.Main
+main: com.github.secretx33.chestquest.ChestQuest
 api-version: 1.12
 authors: [SecretX]
 description: Makes chests unique to each player.

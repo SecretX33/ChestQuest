@@ -16,10 +16,10 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 @KoinApiExtension
-class Main : JavaPlugin(), CustomKoinComponent {
+class ChestQuest : JavaPlugin(), CustomKoinComponent {
 
     private val mod = module {
-        single<Plugin> { this@Main } bind JavaPlugin::class
+        single<Plugin> { this@ChestQuest } bind JavaPlugin::class
         single { get<Plugin>().server.consoleSender }
         single { Reflections() }
         single { SQLite(get()) }
@@ -34,7 +34,7 @@ class Main : JavaPlugin(), CustomKoinComponent {
             loadKoinModules(mod)
         }
         Config.reloadConfig()
-        val commands = Commands(get(), get(), get())
+        val commands = Commands(get())
         val breakChestEvent = BreakChestEvent(get(), get())
         val closeInvEvent = CloseInventoryEvent(get(), get())
         val itemMoveEvent = ItemMoveEvent(get(), get())
