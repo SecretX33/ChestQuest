@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.secretx33"
-version = "1.0.2.2"
+version = "1.0.3"
 
 repositories {
     jcenter()
@@ -54,8 +54,6 @@ artifacts.archives(tasks.shadowJar)
 
 tasks.shadowJar {
     archiveFileName.set(rootProject.name + ".jar")
-//    mergeServiceFiles()
-//    exclude("module-info.class")
     relocate("com.zaxxer.hikari", "com.github.secretx33.dependencies.hikari")
     relocate("com.squareup.moshi", "com.github.secretx33.dependencies.moshi")
     relocate("okio", "com.github.secretx33.dependencies.moshi.okio")
