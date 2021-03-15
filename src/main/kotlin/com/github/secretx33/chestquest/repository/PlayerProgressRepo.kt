@@ -29,7 +29,7 @@ class PlayerProgressRepo(private val db: SQLite) {
 
     fun getPlayerProgress(playerUuid: UUID): Int {
         return playerProgress.getOrPut(playerUuid) {
-//            db.getPlayerProgress(playerUuid) ?: 1.also { db.addPlayerProgress(playerUuid, 1) }
+//            db.getPlayerProgress(playerUuid) ?: 0.also { db.addPlayerProgress(playerUuid, $it) }
             val dbEntry = db.getPlayerProgress(playerUuid)
             if(dbEntry != null){
                 Utils.debugMessage("Got progress of ${Bukkit.getPlayer(playerUuid).name ?: playerUuid.toString()} from Database")

@@ -5,6 +5,7 @@ api-version: 1.12
 authors: [SecretX]
 description: Makes chests unique to each player.
 website: https://github.com/SecretX33
+softdepend: [ProtocolLib]
 
 commands:
   chestquest:

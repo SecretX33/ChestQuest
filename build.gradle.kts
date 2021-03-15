@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.secretx33"
-version = "1.0.3"
+version = "1.0.4"
 
 repositories {
     jcenter()
@@ -43,6 +43,7 @@ dependencies {
     testCompileOnly("org.koin:koin-test:$koin_version")
     implementation("org.xerial:sqlite-jdbc:3.34.0")
     implementation("com.zaxxer:HikariCP:4.0.2")
+    compileOnly("com.comphenix.protocol:ProtocolLib:4.6.0")
 }
 
 // Disables the normal jar task
