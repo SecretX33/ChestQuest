@@ -2,8 +2,6 @@ package com.github.secretx33.chestquest.commands
 
 import com.github.secretx33.chestquest.commands.subcommands.*
 import com.github.secretx33.chestquest.config.Const.PLUGIN_COMMAND_PREFIX
-import com.github.secretx33.chestquest.repository.ChestRepo
-import com.github.secretx33.chestquest.repository.PlayerProgressRepo
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender

@@ -20,7 +20,6 @@ import kotlin.NoSuchElementException
 @KoinApiExtension
 class ChestRepo(private val db: SQLite) {
 
-//    private val tempChestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val questChests: MutableMap<Location, Int> = ConcurrentHashMap()
 
@@ -34,7 +33,7 @@ class ChestRepo(private val db: SQLite) {
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
         return chestContents.getOrPut(key) {
-//            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { db.addChestContent(chest.location, player.uniqueId, it) }
+//            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv) }
             val dbEntry = db.getChestContent(chest.location, player.uniqueId)
             if(dbEntry != null){
                 debugMessage("Got inventory of ${player.name} from Database")
@@ -46,26 +45,8 @@ class ChestRepo(private val db: SQLite) {
         }
     }
 
-//    fun getTempChestContent(chest: Chest, player: Player): Inventory {
-//        val key = Pair(chest.location, player.uniqueId)
-//        return tempChestContents.getOrPut(key) {
-//            debugMessage("Cloned inventory for player that cannot edit chests")
-//            Bukkit.createInventory(chest.inventory.holder, chest.inventory.type)
-//        }
-//    }
-//
-//    fun removeTempChestContent(playerUuid: UUID, chestLoc: Location? = null) = CoroutineScope(Dispatchers.Default).launch {
-//        if(chestLoc == null) {
-//            debugMessage("WARNING: Inside removeTempChestContent, chestLoc came null")
-//            tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
-//        } else {
-//            tempChestContents.remove(Pair(chestLoc, playerUuid))
-//        }
-//    }
-
     fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
         chestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> chestContents.remove(key) }
-//        tempChestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> tempChestContents.remove(key) }
     }
 
     fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.Default).launch {
@@ -85,9 +66,7 @@ class ChestRepo(private val db: SQLite) {
 
     fun isChestInventory(inv: Inventory): Boolean = chestContents.containsValue(inv)
 
-//    fun isTempChestInventory(inv: Inventory): Boolean = tempChestContents.containsValue(inv)
-
-    fun isVirtualInventory(inv: Inventory): Boolean = /*isTempChestInventory(inv) ||*/ isChestInventory(inv)
+    fun isVirtualInventory(inv: Inventory): Boolean = isChestInventory(inv)
 
     fun isQuestChest(location: Location): Boolean = questChests.containsKey(location)
 

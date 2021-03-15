@@ -38,7 +38,6 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         val inv = event.inventory
         if (event.isPutAction() && inv.isChest() && chestRepo.isVirtualInventory(inv)){
             event.isCancelled = true
-            debugMessage("Canceling put action of ${event.whoClicked.name}")
         }
     }
 

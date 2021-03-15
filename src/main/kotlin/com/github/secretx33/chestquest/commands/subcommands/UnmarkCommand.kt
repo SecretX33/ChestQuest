@@ -20,8 +20,8 @@ class UnmarkCommand : SubCommand(), CustomKoinComponent {
         player.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let {
             if(chestRepo.isQuestChest(it.location)) {
                 chestRepo.removeQuestChest(it.location)
-                player.message("Converted chest at ${it.coordinates()}} back to a normal chest")
-                Utils.consoleMessage("Converted chest at ${it.coordinates()}} back to a normal chest")
+                player.message("Converted chest at ${it.coordinates()} back to a normal chest")
+                Utils.consoleMessage("Converted chest at ${it.coordinates()} back to a normal chest")
             } else {
                 player.message("${ChatColor.RED}This chest is NOT a Quest Chest")
             }

@@ -1,7 +1,5 @@
 package com.github.secretx33.chestquest
 
-import com.comphenix.protocol.ProtocolLibrary
-import com.comphenix.protocol.ProtocolManager
 import com.github.secretx33.chestquest.commands.Commands
 import com.github.secretx33.chestquest.config.Config
 import com.github.secretx33.chestquest.database.SQLite
