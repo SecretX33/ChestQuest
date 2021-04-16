@@ -19,11 +19,11 @@ class ReloadCommand : SubCommand(), CustomKoinComponent {
 
     private val plugin by inject<Plugin>()
 
-    override fun onCommandByPlayer(player: Player, strings: Array<String>) {
-        onCommandByConsole(player, strings)
+    override fun onCommandByPlayer(player: Player, alias: String, strings: Array<String>) {
+        onCommandByConsole(player, alias, strings)
     }
 
-    override fun onCommandByConsole(sender: CommandSender, strings: Array<String>) {
+    override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {
         plugin.saveDefaultConfig()
         plugin.reloadConfig()
         Config.reloadConfig()

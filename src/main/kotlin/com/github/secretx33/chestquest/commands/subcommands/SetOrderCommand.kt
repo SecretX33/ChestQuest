@@ -20,43 +20,31 @@ class SetOrderCommand : SubCommand(), CustomKoinComponent {
 
     private val chestRepo by inject<ChestRepo>()
 
-    override fun onCommandByPlayer(player: Player, strings: Array<String>) {
-        if(strings.size == 1) {
-            player.sendMessage("${ChatColor.RED}Please type a number after ${ChatColor.GOLD}setorder${ChatColor.RED}. Command usage: /cq setorder <number>")
+    override fun onCommandByPlayer(player: Player, alias: String, strings: Array<String>) {
+        if(strings.size < 2 || strings[1].toIntOrNull().let { it == null || it < 1 }) {
+            player.sendMessage("${ChatColor.RED}Please type a number greater than 0 after ${ChatColor.GOLD}setorder${ChatColor.RED}. Command usage: /$alias $name <number>")
             return
         }
-        try {
-            val order = strings[1].toInt()
-            if(order < 1) {
-                player.sendMessage("${ChatColor.RED}Please type a number greater than 0. Command usage: /cq setorder <number>")
-                return
-            }
-            player.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let { chest ->
-                if(!chestRepo.isQuestChest(chest.location)) {
-                    player.sendMessage("${ChatColor.RED}This chest is not a Quest Chest, you can't change its order")
-                } else {
-                    val oldOrder = chestRepo.changeOrderQuestChest(chest.location, order)
-                    val msg = "Chest order is now ${ChatColor.RED}$order${ChatColor.WHITE} (previously $oldOrder)"
-                    player.message(msg)
-                }
-            }
-        } catch (e: NumberFormatException) {
-            player.sendMessage("${ChatColor.RED}Please type only numbers after ${ChatColor.GOLD}setorder${ChatColor.RED}. Command usage: /cq setorder <number>")
+        val chest = player.getTargetBlock(null, 5)?.takeIf { it.isChest() } ?: return
+        val order = strings[1].toInt()
+
+        // if chest is not quest chest, warn and return
+        if(!chestRepo.isQuestChest(chest.location)) {
+            player.sendMessage("${ChatColor.RED}This chest is not a Quest Chest, you can't change its order")
+            return
         }
+
+        // modify chest order to typed order
+        val oldOrder = chestRepo.changeOrderQuestChest(chest.location, order)
+        player.message("Chest order is now ${ChatColor.RED}$order${ChatColor.WHITE} (previously $oldOrder)")
     }
 
-    override fun onCommandByConsole(sender: CommandSender, strings: Array<String>) {
+    override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {
         sender.sendMessage("${ChatColor.RED}You may only use this command in-game")
     }
 
     override fun getCompletor(sender: CommandSender, length: Int, hint: String, strings: Array<String>): List<String> {
-        val options = ArrayList<String>()
-        if (length == 1) {
-            return options
-        }
-        if (length == 2) {
-            options.add("<number>")
-        }
-        return options.filter { it.startsWith(hint, ignoreCase = true) }
+        if(sender !is Player || length != 2 || hint.isNotBlank()) return emptyList()
+        return listOf("<number>")
     }
 }

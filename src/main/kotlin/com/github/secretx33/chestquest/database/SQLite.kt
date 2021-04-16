@@ -23,12 +23,13 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
+import java.util.logging.Logger
 import java.util.regex.Pattern
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 @KoinApiExtension
-class SQLite(plugin: Plugin) {
+class SQLite(plugin: Plugin, private val log: Logger) {
 
     private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}database.db"
     private val ds = HikariDataSource(hikariConfig.apply { jdbcUrl = url })
@@ -48,8 +49,7 @@ class SQLite(plugin: Plugin) {
                 debugMessage("Initiated DB")
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database and create the tables")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to connect to the database and create the tables\n${e.printStackTrace()}")
         }
     }
 

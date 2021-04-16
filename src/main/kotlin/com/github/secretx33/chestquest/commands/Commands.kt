@@ -29,22 +29,15 @@ class Commands(val plugin: JavaPlugin) : CommandExecutor, TabCompleter {
         }
     }
 
-    override fun onCommand(sender: CommandSender, command: Command, s: String, strings: Array<String>): Boolean {
+    override fun onCommand(sender: CommandSender, command: Command, alias: String, strings: Array<String>): Boolean {
         if (strings.isEmpty()) return true
-        for (i in strings.indices) {
-            strings[i] = strings[i].toLowerCase(Locale.US)
-        }
+
         val sub = strings[0]
-        for(cmd in subcommands) {
-            if(sub == cmd.name || cmd.aliases.contains(sub)) {
-                if(cmd.hasPermission(sender)) {
-                    if(sender is Player) {
-                        cmd.onCommandByPlayer(sender, strings)
-                    } else {
-                        cmd.onCommandByConsole(sender, strings)
-                    }
-                }
-                break
+        subcommands.firstOrNull { it.hasPermission(sender) && (it.name == sub || it.aliases.contains(sub)) }?.let { cmd ->
+            if(sender is Player) {
+                cmd.onCommandByPlayer(sender, alias, strings)
+            } else {
+                cmd.onCommandByConsole(sender, alias, strings)
             }
         }
         return true
@@ -52,23 +45,17 @@ class Commands(val plugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, strings: Array<String>): List<String> {
         // chestquest <subcommand> <args>
-        if(strings.size == 1){
-            val subs = ArrayList<String>()
-            for (cmd in subcommands) {
-                if(cmd.hasPermission(sender)) {
-                    subs.add(cmd.name)
-                }
-            }
-            return subs.filter { it.startsWith(strings[0], ignoreCase = true) }
+        if(strings.size == 1) {
+            return subcommands.asSequence()
+                .filter { cmd -> cmd.hasPermission(sender) && cmd.name.startsWith(strings[0], ignoreCase = true)}
+                .map { it.name }
+                .toList()
         }
         if(strings.size > 1) {
-            for(cmd in subcommands) {
-                if(cmd.aliases.contains(strings[0].toLowerCase())) {
-                    return if(cmd.hasPermission(sender)) {
-                        cmd.getCompletor(sender, strings.size, strings[strings.size - 1], strings)
-                    } else emptyList()
-                }
-            }
+            return subcommands
+                .firstOrNull { it.hasPermission(sender) && it.aliases.contains(strings[0].toLowerCase()) }
+                ?.getCompletor(sender, strings.size, strings[strings.size - 1], strings)
+                ?: emptyList()
         }
         return emptyList()
     }

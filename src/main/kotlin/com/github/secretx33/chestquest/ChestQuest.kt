@@ -21,10 +21,17 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
     private val mod = module {
         single<Plugin> { this@ChestQuest } bind JavaPlugin::class
         single { get<Plugin>().server.consoleSender }
+        single { logger }
         single { Reflections() }
-        single { SQLite(get()) }
+        single { SQLite(get(), get()) }
         single { ChestRepo(get()) }
         single { PlayerProgressRepo(get()) }
+        single { Commands(get()) }
+        single { BreakChestEvent(get(), get()) }
+        single { CloseInventoryEvent(get(), get()) }
+        single { ItemMoveEvent(get(), get()) }
+        single { OpenChestEvent(get(), get(), get()) }
+        single { PlayerLogoutEvent(get(), get(), get()) }
     }
 
     override fun onEnable() {
@@ -34,13 +41,13 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
             loadKoinModules(mod)
         }
         Config.reloadConfig()
-        val commands = Commands(get())
-        val breakChestEvent = BreakChestEvent(get(), get())
-        val closeInvEvent = CloseInventoryEvent(get(), get())
-        val itemMoveEvent = ItemMoveEvent(get(), get())
-        val openChestEvent = OpenChestEvent(get(), get(), get())
-        val playerLogoutEvent = PlayerLogoutEvent(get(), get(), get())
-        consoleMessage("loaded")
+        get<BreakChestEvent>()
+        get<CloseInventoryEvent>()
+        get<ItemMoveEvent>()
+        get<OpenChestEvent>()
+        get<PlayerLogoutEvent>()
+        get<Commands>()
+        logger.info("loaded")
     }
 
     override fun onDisable() {

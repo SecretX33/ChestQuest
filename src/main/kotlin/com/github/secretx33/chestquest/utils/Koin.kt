@@ -16,7 +16,7 @@ interface CustomKoinComponent : KoinComponent {
     override fun getKoin(): Koin = CustomScope.get()
 }
 
-object CustomScope : KoinContext {
+private object CustomScope : KoinContext {
 
     private var _koin: Koin? = null
 
@@ -36,7 +36,7 @@ object CustomScope : KoinContext {
         _koin = null
     }
 
-    internal fun startKoin(koinContext: KoinContext = CustomScope, koinApplication: KoinApplication): KoinApplication = synchronized(this) {
+    fun startKoin(koinContext: KoinContext = CustomScope, koinApplication: KoinApplication): KoinApplication = synchronized(this) {
         koinContext.register(koinApplication)
         koinApplication.createEagerInstances()
         return koinApplication
@@ -45,7 +45,7 @@ object CustomScope : KoinContext {
     /**
      * Start a custom Koin Application as StandAlone
      */
-    internal fun startKoin(koinContext: KoinContext = CustomScope, appDeclaration: KoinAppDeclaration): KoinApplication = synchronized(this) {
+    fun startKoin(koinContext: KoinContext = CustomScope, appDeclaration: KoinAppDeclaration): KoinApplication = synchronized(this) {
         val koinApplication = KoinApplication.init()
         koinContext.register(koinApplication)
         appDeclaration(koinApplication)
@@ -56,28 +56,28 @@ object CustomScope : KoinContext {
     /**
      * load Koin module in custom Koin context
      */
-    internal fun loadKoinModules(module: Module) = synchronized(this) {
+    fun loadKoinModules(module: Module) = synchronized(this) {
         get().loadModules(listOf(module))
     }
 
     /**
      * load Koin modules in custom Koin context
      */
-    internal fun loadKoinModules(modules: List<Module>) = synchronized(this) {
+    fun loadKoinModules(modules: List<Module>) = synchronized(this) {
         get().loadModules(modules)
     }
 
     /**
      * unload Koin modules from custom Koin context
      */
-    internal fun unloadKoinModules(module: Module) = synchronized(this) {
+    fun unloadKoinModules(module: Module) = synchronized(this) {
         get().unloadModules(listOf(module))
     }
 
     /**
      * unload Koin modules from custom Koin context
      */
-    internal fun unloadKoinModules(modules: List<Module>) = synchronized(this) {
+    fun unloadKoinModules(modules: List<Module>) = synchronized(this) {
         get().unloadModules(modules)
     }
 }

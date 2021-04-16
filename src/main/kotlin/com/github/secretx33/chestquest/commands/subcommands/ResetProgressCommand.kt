@@ -20,32 +20,32 @@ class ResetProgressCommand : SubCommand(), CustomKoinComponent {
 
     private val progressRepo by inject<PlayerProgressRepo>()
 
-    override fun onCommandByPlayer(player: Player, strings: Array<String>) {
-        onCommandByConsole(player, strings)
+    override fun onCommandByPlayer(player: Player, alias: String, strings: Array<String>) {
+        onCommandByConsole(player, alias, strings)
     }
 
-    override fun onCommandByConsole(sender: CommandSender, strings: Array<String>) {
-        if(strings.size == 1) {
-            sender.message("${ChatColor.RED}Please type a name after ${ChatColor.GOLD}reset${ChatColor.RED}. Command usage: /cq resetprogress <playerName>")
+    override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {
+        if(strings.size < 2) {
+            sender.message("${ChatColor.RED}Please type a name after ${ChatColor.GOLD}reset${ChatColor.RED}. Command usage: /$alias $name <player>")
             return
         }
-        val player = Bukkit.getPlayer(strings[1])
-        if(player == null) {
+
+        // if player doesn't exist, warn and return
+        val player = Bukkit.getPlayerExact(strings[1]) ?: run {
             sender.message("${ChatColor.RED}Player ${ChatColor.BLUE}${strings[1]}${ChatColor.RED} was not found, please check if you spelled his name correctly.")
             return
         }
+
+        // clear all player progress
         progressRepo.clearPlayerProgress(player)
         sender.message("Cleared ALL progress from player ${ChatColor.BLUE}${player.name}${ChatColor.WHITE}.")
     }
 
     override fun getCompletor(sender: CommandSender, length: Int, hint: String, strings: Array<String>): List<String> {
-        val options = ArrayList<String>()
-        if (length == 1) {
-            return options
-        }
-        if (length == 2) {
-            options.addAll(Bukkit.getServer().onlinePlayers.map { it.name })
-        }
-        return options.filter { it.startsWith(hint, ignoreCase = true) }
+        if(length != 2) return emptyList()
+        return Bukkit.getOnlinePlayers().asSequence()
+            .filter { it.name.startsWith(hint, ignoreCase = true) }
+            .map { it.name }
+            .toList()
     }
 }

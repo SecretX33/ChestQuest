@@ -16,19 +16,21 @@ class UnmarkCommand : SubCommand(), CustomKoinComponent {
 
     private val chestRepo by inject<ChestRepo>()
 
-    override fun onCommandByPlayer(player: Player, strings: Array<String>) {
-        player.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let {
-            if(chestRepo.isQuestChest(it.location)) {
-                chestRepo.removeQuestChest(it.location)
-                player.message("Converted chest at ${it.coordinates()} back to a normal chest")
-                Utils.consoleMessage("Converted chest at ${it.coordinates()} back to a normal chest")
-            } else {
-                player.message("${ChatColor.RED}This chest is NOT a Quest Chest")
-            }
+    override fun onCommandByPlayer(player: Player, alias: String, strings: Array<String>) {
+        val chest = player.getTargetBlock(null, 5)?.takeIf { it.isChest() } ?: return
+        // if chest is not a quest chest
+        if(!chestRepo.isQuestChest(chest.location)) {
+            player.message("${ChatColor.RED}This chest is NOT a Quest Chest")
+            return
         }
+        // remove quest chest
+        chestRepo.removeQuestChest(chest.location)
+        player.message("Converted chest at ${chest.coordinates()} back to a normal chest")
+        Utils.consoleMessage("Converted chest at ${chest.coordinates()} back to a normal chest")
+
     }
 
-    override fun onCommandByConsole(sender: CommandSender, strings: Array<String>) {
+    override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {
         sender.sendMessage("${ChatColor.RED}You may only use this command in-game")
     }
 
