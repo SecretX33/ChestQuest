@@ -7,6 +7,8 @@ import com.squareup.moshi.Moshi
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.Location
@@ -14,6 +16,7 @@ import org.bukkit.block.Container
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.Plugin
+import org.intellij.lang.annotations.Language
 import org.koin.core.component.KoinApiExtension
 import java.nio.file.FileSystems
 import java.sql.Connection
@@ -29,6 +32,9 @@ class SQLite(plugin: Plugin, private val log: Logger) {
 
     private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}database.db"
     private val ds = HikariDataSource(hikariConfig.apply { jdbcUrl = url })
+    private val chestQuestLock = Semaphore(1)
+    private val chestContentLock = Semaphore(1)
+    private val playerProgressLock = Semaphore(1)
 
     init { initialize() }
 
@@ -54,52 +60,39 @@ class SQLite(plugin: Plugin, private val log: Logger) {
     fun addQuestChest(chestLoc: Location, chestOrder: Int) = CoroutineScope(Dispatchers.IO).launch {
         require(chestOrder >= 1) { "Chest order cannot be less than 1, actual value is $chestOrder" }
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(INSERT_QUEST_CHEST).use { prep ->
-                    prep.setString(1, jsonLoc.toJson(chestLoc))
-                    prep.setInt(2, chestOrder)
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(INSERT_QUEST_CHEST, chestQuestLock) {
+                setString(1, chestLoc.toJson())
+                setInt(2, chestOrder)
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.formattedString()})")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.formattedString()})\n${e.stackTraceToString()}")
         }
     }
 
     fun addChestContent(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                val serializedInv = jsonInv.toJson(inv)
-                conn.prepareStatement(INSERT_CHEST_CONTENTS).use { prep ->
-                    prep.setString(1, jsonLoc.toJson(chestLoc))
-                    prep.setString(2, playerUuid.toString())
-                    prep.setString(3, serializedInv)
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(INSERT_CHEST_CONTENTS, chestContentLock) {
+                setString(1, chestLoc.toJson())
+                setString(2, playerUuid.toString())
+                setString(3, inv.toJson())
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.formattedString()} to the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.formattedString()} to the database\n${e.stackTraceToString()}")
         }
     }
 
     fun addPlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
         require(progress >= 0) { "Progress has to be at least 0. Actual value if $progress" }
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(INSERT_PLAYER_PROGRESS).use { prep ->
-                    prep.setString(1, playerUuid.toString())
-                    prep.setInt(2, progress)
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(INSERT_PLAYER_PROGRESS, playerProgressLock) {
+                setString(1, playerUuid.toString())
+                setInt(2, progress)
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database\n${e.stackTraceToString()}")
         }
     }
 
@@ -107,67 +100,51 @@ class SQLite(plugin: Plugin, private val log: Logger) {
 
     fun removeQuestChest(chestLoc: Location) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(REMOVE_QUEST_CHEST).use { prep ->
-                    prep.setString(1, jsonLoc.toJson(chestLoc))
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(REMOVE_QUEST_CHEST, chestQuestLock) {
+                setString(1, chestLoc.toJson())
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to remove a Quest Chest from the database\n${e.stackTraceToString()}")
         }
     }
 
     private fun removeQuestChestsByWorldUuid(worldUuids: Iterable<String>) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(REMOVE_QUEST_CHESTS_OF_WORLD).use { prep ->
-                    worldUuids.forEach {
-                        prep.setString(1, "%$it%")
-                        prep.addBatch()
-                    }
-                    prep.executeBatch()
+            withStatement(REMOVE_QUEST_CHESTS_OF_WORLD, chestQuestLock) {
+                worldUuids.forEach {
+                    setString(1, "%$it%")
+                    addBatch()
                 }
-                conn.commit()
+                executeBatch()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to buck remove all quest chests from worlds")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to buck remove all quest chests from worlds\n${e.stackTraceToString()}")
         }
     }
 
     private fun removeQuestChestsByLocation(locations: Iterable<Location>) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(REMOVE_QUEST_CHEST).use { prep ->
-                    locations.forEach { loc ->
-                        prep.setString(1, jsonLoc.toJson(loc))
-                        prep.addBatch()
-                    }
-                    prep.executeBatch()
+            withStatement(REMOVE_QUEST_CHEST, chestQuestLock) {
+                locations.forEach { loc ->
+                    setString(1, loc.toJson())
+                    addBatch()
                 }
-                conn.commit()
+                executeBatch()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to remove a list of quest chests")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to remove a list of quest chests\n${e.stackTraceToString()}")
         }
     }
 
     fun removePlayerProgress(playerUuid: UUID) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(REMOVE_PLAYER_PROGRESS).use { prep ->
-                    prep.setString(1, playerUuid.toString())
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(REMOVE_PLAYER_PROGRESS, playerProgressLock) {
+                setString(1, playerUuid.toString())
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to remove a Quest Chest from the database\n${e.stackTraceToString()}")
         }
     }
 
@@ -181,7 +158,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
         try {
             conn = ds.connection
             prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
-                setString(1, jsonLoc.toJson(chestLoc))
+                setString(1, chestLoc.toJson())
                 setString(2, playerUuid.toString())
             }
             rs = prep.executeQuery()
@@ -189,16 +166,15 @@ class SQLite(plugin: Plugin, private val log: Logger) {
             if(rs.next()){
                 val inv = jsonInv.fromJson(rs.getString("inventory"))
                 when {
-                    inv == null -> log.severe("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, inventory came null, report this to SecretX!")
-                    inv.holder == null -> log.severe("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, holder came null, report this to SecretX!")
+                    inv == null -> log.severe("ERROR: While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, inventory came null, report this to SecretX!")
+                    inv.holder == null -> log.severe("ERROR: While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, holder came null, report this to SecretX!")
                     else -> return inv
                 }
             } else {
                 return null
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.formattedString()} from database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.formattedString()} from database\n${e.stackTraceToString()}")
         } finally {
             rs?.safeClose()
             prep?.safeClose()
@@ -228,7 +204,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                     }
                 } else if(chestLoc.world != null) {
                     if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
-                        log.severe("${ChatColor.RED}WARNING: The chest located at '${chestLoc.formattedString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
+                        log.warning("WARNING: The chest located at '${chestLoc.formattedString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
                         chestRemoveSet.add(chestLoc)
                     } else {
                         chests[chestLoc] = rs.getInt("chest_order")
@@ -236,14 +212,13 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 }
             }
             if(worldRemoveSet.isNotEmpty()){
-                worldRemoveSet.forEach { log.severe("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
+                worldRemoveSet.forEach { log.warning("WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
                 removeQuestChestsByWorldUuid(worldRemoveSet)
             }
             if(chestRemoveSet.isNotEmpty())
                 removeQuestChestsByLocation(chestRemoveSet)
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to get all chest quests async\n${e.stackTraceToString()}")
         } finally {
             rs?.safeClose()
             prep?.safeClose()
@@ -259,40 +234,28 @@ class SQLite(plugin: Plugin, private val log: Logger) {
     fun getAllPlayerProgressAsync(): Deferred<Map<UUID, Int>> = CoroutineScope(Dispatchers.IO).async {
         val map = HashMap<UUID, Int>()
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(SELECT_ALL_FROM_PLAYER_PROGRESS).use { prep ->
-                    val rs = prep.executeQuery()
-                    while(rs.next()){
-                        val key = UUID.fromString(rs.getString("player_uuid"))
-                        val value = rs.getInt("progress")
-                        map[key] = value
-                    }
-                    rs.safeClose()
+            withQueryStatement(SELECT_ALL_FROM_PLAYER_PROGRESS) { rs ->
+                while(rs.next()){
+                    val key = UUID.fromString(rs.getString("player_uuid"))
+                    val value = rs.getInt("progress")
+                    map[key] = value
                 }
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to get all player progress from database async")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to get all player progress from database async\n${e.stackTraceToString()}")
         }
         map
     }
 
     fun getPlayerProgress(playerUuid: UUID): Int? {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(SELECT_PLAYER_PROCESS).use { prep ->
-                    prep.setString(1, playerUuid.toString())
-
-                    prep.executeQuery().use { rs ->
-                        if(rs.next()){
-                            return rs.getInt("progress")
-                        }
-                    }
-                }
+            withQueryStatement(SELECT_PLAYER_PROCESS, {
+                setString(1, playerUuid.toString())
+            }) { rs ->
+                if(rs.next()) return rs.getInt("progress")
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database\n${e.stackTraceToString()}")
         }
         return null
     }
@@ -301,56 +264,73 @@ class SQLite(plugin: Plugin, private val log: Logger) {
 
     fun updateInventory(chestLoc: Location, playerUuid: UUID, inv: Inventory) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(UPDATE_CHEST_CONTENTS).use { prep ->
-                    prep.setString(1, jsonInv.toJson(inv))
-                    prep.setString(2, jsonLoc.toJson(chestLoc))
-                    prep.setString(3, playerUuid.toString())
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(UPDATE_CHEST_CONTENTS, chestContentLock) {
+                setString(1, inv.toJson())
+                setString(2, chestLoc.toJson())
+                setString(3, playerUuid.toString())
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while updating an inventory to the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while updating an inventory to the database\n${e.stackTraceToString()}")
         }
     }
 
     fun updateChestOrder(location: Location, newOrder: Int) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(UPDATE_QUEST_CHEST_ORDER).use { prep ->
-                    prep.setInt(1, newOrder)
-                    prep.setString(2, jsonLoc.toJson(location))
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(UPDATE_QUEST_CHEST_ORDER, chestQuestLock) {
+                setInt(1, newOrder)
+                setString(2, location.toJson())
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while updating chest order of ${location.formattedString()} to the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while updating chest order of ${location.formattedString()} to the database\n${e.stackTraceToString()}")
         }
     }
 
     fun updatePlayerProgress(playerUuid: UUID, progress: Int) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            ds.connection.use { conn: Connection ->
-                conn.prepareStatement(UPDATE_PLAYER_PROGRESS).use { prep ->
-                    prep.setInt(1, progress)
-                    prep.setString(2, playerUuid.toString())
-                    prep.execute()
-                }
-                conn.commit()
+            withStatement(UPDATE_PLAYER_PROGRESS, playerProgressLock) {
+                setInt(1, progress)
+                setString(2, playerUuid.toString())
+                execute()
             }
         } catch (e: SQLException) {
-            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
-            e.printStackTrace()
+            log.severe("ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database\n${e.stackTraceToString()}")
         }
     }
+
+    private fun String.toLocation() = jsonLoc.fromJson(this)
+
+    private fun Location.toJson() = jsonLoc.toJson(this)
+
+    private fun Inventory.toJson() = jsonInv.toJson(this)
 
     private fun AutoCloseable?.safeClose() { runCatching { this?.close() } }
 
     private fun newEmptyInventory(): Inventory = Bukkit.createInventory(null, InventoryType.CHEST)
+
+    private suspend fun <T> withStatement(@Language("SQL") statement: String, semaphore: Semaphore, prepareBlock: PreparedStatement.() -> T): T {
+        semaphore.withPermit {
+            ds.connection.use { conn ->
+                conn.prepareStatement(statement).use { prep ->
+                    return prep.prepareBlock().also { conn.commit() }
+                }
+            }
+        }
+    }
+
+    private inline fun <reified T> withQueryStatement(@Language("SQL") statement: String, noinline prepareBlock: PreparedStatement.() -> Unit = {}, resultBlock: (ResultSet) -> T): T {
+        ds.connection.use { conn ->
+            conn.prepareStatement(statement).use { prep ->
+                prep.apply {
+                    prepareBlock()
+                    executeQuery().use { rs ->
+                        return resultBlock(rs)
+                    }
+                }
+            }
+        }
+    }
 
     private companion object {
         val moshi: Moshi = Moshi.Builder()
