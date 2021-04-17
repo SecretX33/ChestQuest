@@ -1,7 +1,6 @@
 package com.github.secretx33.chestquest.config
 
 import com.github.secretx33.chestquest.utils.CustomKoinComponent
-import com.github.secretx33.chestquest.utils.Utils.consoleMessage
 import com.github.secretx33.chestquest.utils.inject
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.plugin.Plugin
@@ -21,19 +20,19 @@ object Config : CustomKoinComponent {
             general = config.getConfigurationSection(section)
         }
         if(general == null) {
-            consoleMessage(String.format(Const.SECTION_NOT_FOUND, section))
+            println(String.format(Const.SECTION_NOT_FOUND, section))
             return
         }
         if(config.isSet("general.debug")){
             debug = config.getBoolean("general.debug")
         } else {
-            consoleMessage(String.format(Const.ENTRY_NOT_FOUND, "debug"))
+            println(String.format(Const.ENTRY_NOT_FOUND, "debug"))
         }
         val field = "automatically-remove-db-entries-from-missing-world"
         if(config.isSet("general.$field")){
             removeDBEntriesIfWorldIsMissing = config.getBoolean("general.$field")
         } else {
-            consoleMessage(String.format(Const.ENTRY_NOT_FOUND, field))
+            println(String.format(Const.ENTRY_NOT_FOUND, field))
         }
     }
 }

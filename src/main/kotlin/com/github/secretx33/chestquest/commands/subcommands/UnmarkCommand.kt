@@ -27,7 +27,6 @@ class UnmarkCommand : SubCommand(), CustomKoinComponent {
         // remove quest chest
         chestRepo.removeQuestChest(chest.location)
         player.message("Converted chest at ${chest.coordinates()} back to a normal chest")
-        Utils.consoleMessage("Converted chest at ${chest.coordinates()} back to a normal chest")
 
     }
 

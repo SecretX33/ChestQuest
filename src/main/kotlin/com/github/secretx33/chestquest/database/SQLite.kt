@@ -151,63 +151,48 @@ class SQLite(plugin: Plugin, private val log: Logger) {
     // GET
 
     fun getChestContent(chestLoc: Location, playerUuid: UUID): Inventory? {
-        var conn: Connection? = null
-        var prep: PreparedStatement? = null
-        var rs: ResultSet? = null
-
         try {
-            conn = ds.connection
-            prep = conn.prepareStatement(SELECT_CHEST_CONTENT).apply {
+            withQueryStatement(SELECT_CHEST_CONTENT, {
                 setString(1, chestLoc.toJson())
                 setString(2, playerUuid.toString())
-            }
-            rs = prep.executeQuery()
+            }) { rs ->
+                if(!rs.next()) return null
 
-            if(rs.next()){
-                val inv = jsonInv.fromJson(rs.getString("inventory"))
+                val inv = rs.getString("inventory").toInventory()
                 when {
                     inv == null -> log.severe("ERROR: While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, inventory came null, report this to SecretX!")
                     inv.holder == null -> log.severe("ERROR: While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, holder came null, report this to SecretX!")
                     else -> return inv
                 }
-            } else {
-                return null
             }
         } catch (e: SQLException) {
             log.severe("ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.formattedString()} from database\n${e.stackTraceToString()}")
-        } finally {
-            rs?.safeClose()
-            prep?.safeClose()
-            conn?.safeClose()
         }
         return newEmptyInventory()
     }
 
     fun getAllQuestChestsAsync(): Deferred<Map<Location, Int>> = CoroutineScope(Dispatchers.IO).async {
-        var conn: Connection? = null
-        var prep: PreparedStatement? = null
-        var rs: ResultSet? = null
-
         val chests = HashMap<Location, Int>()
         val worldRemoveSet = HashSet<String>()
         val chestRemoveSet = HashSet<Location>()
 
         try {
-            conn = ds.connection
-            prep = conn.prepareStatement(SELECT_ALL_FROM_QUEST_CHEST)
-            rs = prep.executeQuery()
-            while(rs.next()){
-                val chestLoc = jsonLoc.fromJson(rs.getString("location"))!!
-                if(chestLoc.world == null && Config.removeDBEntriesIfWorldIsMissing){
-                    UUID_WORLD_PATTERN.matcher(rs.getString("location")).replaceFirst("$1")?.let {
-                        worldRemoveSet.add(it)
-                    }
-                } else if(chestLoc.world != null) {
-                    if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
-                        log.warning("WARNING: The chest located at '${chestLoc.formattedString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
-                        chestRemoveSet.add(chestLoc)
-                    } else {
-                        chests[chestLoc] = rs.getInt("chest_order")
+            withQueryStatement(SELECT_ALL_FROM_QUEST_CHEST) { rs ->
+                while(rs.next()){
+                    val chestLoc = rs.getString("location").toLocation()
+                    val world = chestLoc.world
+
+                    if(world == null && Config.removeDBEntriesIfWorldIsMissing){
+                        UUID_WORLD_PATTERN.getOrNull(rs.getString("location"), 1)?.let {
+                            worldRemoveSet.add(it)
+                        }
+                    } else if(world != null) {
+                        if (world.getBlockAt(chestLoc).state !is Container) {
+                            log.warning("WARNING: The chest located at '${chestLoc.formattedString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
+                            chestRemoveSet.add(chestLoc)
+                        } else {
+                            chests[chestLoc] = rs.getInt("chest_order")
+                        }
                     }
                 }
             }
@@ -219,10 +204,6 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 removeQuestChestsByLocation(chestRemoveSet)
         } catch (e: SQLException) {
             log.severe("ERROR: An exception occurred while trying to get all chest quests async\n${e.stackTraceToString()}")
-        } finally {
-            rs?.safeClose()
-            prep?.safeClose()
-            conn?.safeClose()
         }
         chests
     }
@@ -299,11 +280,15 @@ class SQLite(plugin: Plugin, private val log: Logger) {
         }
     }
 
-    private fun String.toLocation() = jsonLoc.fromJson(this)
+    private fun String.toLocation() = jsonLoc.fromJson(this)!!
 
     private fun Location.toJson() = jsonLoc.toJson(this)
 
+    private fun String.toInventory() = jsonInv.fromJson(this)
+
     private fun Inventory.toJson() = jsonInv.toJson(this)
+
+    private fun Regex.getOrNull(string: String, group: Int) = find(string)?.groupValues?.get(group)
 
     private fun AutoCloseable?.safeClose() { runCatching { this?.close() } }
 
@@ -366,6 +351,6 @@ class SQLite(plugin: Plugin, private val log: Logger) {
         const val REMOVE_QUEST_CHEST = "DELETE FROM questChests WHERE location = ?;"
         const val REMOVE_PLAYER_PROGRESS = "DELETE FROM playerProgress WHERE player_uuid = ?;"
 
-        val UUID_WORLD_PATTERN: Pattern = Pattern.compile("""^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""")
+        val UUID_WORLD_PATTERN = """^"\{\\"world\\":\\"([0-9a-zA-Z-]+).*""".toRegex()
     }
 }
