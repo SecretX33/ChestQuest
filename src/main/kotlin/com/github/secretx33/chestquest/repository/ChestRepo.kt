@@ -33,17 +33,12 @@ class ChestRepo(private val db: SQLite, private val log: Logger) {
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
         return chestContents.getOrPut(key) {
-            db.getChestContent(chest.location, player.uniqueId).also { println("Got inventory of ${player.name} from Database") }
-                ?: chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv)
-                    println("Got inventory of ${player.name} from Clone")
-                }
+            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv) }
         }
     }
 
     fun removeEntriesOf(player: Player) {
-        println("chestContents before removing: ${chestContents.size} items")
         chestContents.filterKeys { (_, uuid) -> uuid == player.uniqueId }.let { chestContents.keys.removeAll(it.keys) }
-        println("chestContents after removing: ${chestContents.size} items")
     }
 
     fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.Default).launch {

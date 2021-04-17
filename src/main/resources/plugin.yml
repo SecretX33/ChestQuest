@@ -21,16 +21,15 @@ permissions:
       cq.edit: true
       cq.resetprogress: true
       cq.reload: true
-      cq.debug: true
+
   cq.edit:
     description: Allows a player to create, mark, unmark and edit "quest" chests
     default: false
+
   cq.resetprogress:
     description: Allows a player to reset quest chest progress of any other player
     default: false
+
   cq.reload:
     description: Allows a player to reload the plugin config
-    default: false
-  cq.debug:
-    description: Allows a player to toggle debug mode (for developers only)
     default: false

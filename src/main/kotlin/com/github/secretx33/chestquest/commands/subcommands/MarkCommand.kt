@@ -1,7 +1,10 @@
 package com.github.secretx33.chestquest.commands.subcommands
 
 import com.github.secretx33.chestquest.repository.ChestRepo
-import com.github.secretx33.chestquest.utils.*
+import com.github.secretx33.chestquest.utils.CustomKoinComponent
+import com.github.secretx33.chestquest.utils.coordinates
+import com.github.secretx33.chestquest.utils.inject
+import com.github.secretx33.chestquest.utils.isChest
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player

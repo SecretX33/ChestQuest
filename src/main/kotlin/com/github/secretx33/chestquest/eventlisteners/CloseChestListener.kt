@@ -26,10 +26,9 @@ class CloseChestListener(plugin: Plugin, private val chestRepo: ChestRepo, priva
     private fun InventoryCloseEvent.onChestClose() {
         if(player !is Player || player.canEditQC() || !chestRepo.isChestInventory(inventory)) return
 
-        // update inventory
+        // update closed inventory to database
         chestRepo.updateInventory(player.uniqueId, inventory)
         (inventory.holder as? Chest)?.let { (player as Player).simulateChestClose(it) }
-        log.fine("Player ${player.name} closed his custom inventory, saving it into DB.")
     }
 
     private fun Player.simulateChestClose(chest: Chest){

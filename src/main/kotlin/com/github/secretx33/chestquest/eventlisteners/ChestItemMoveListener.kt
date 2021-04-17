@@ -34,6 +34,7 @@ class ChestItemMoveListener(plugin: Plugin, private val chestRepo: ChestRepo, pr
     private fun InventoryClickEvent.onItemPut() {
         if(clickedInventory == null) return
 
+        // cancel any try of putting or swapping items inside a quest chest inventory
         if(isPutAction() && inventory.isChest() && chestRepo.isChestInventory(inventory)){
             isCancelled = true
         }
@@ -44,8 +45,8 @@ class ChestItemMoveListener(plugin: Plugin, private val chestRepo: ChestRepo, pr
         if(clickedInventory == null) return
         val player = whoClicked as? Player ?: return
 
+        // if an item is picked up from the chest, save new inventory on database
         if(isPickAction() && inventory.isChest() && chestRepo.isChestInventory(inventory)){
-            log.fine("Registered pickup actions of ${player.name}, saving to prevent exploits")
             chestRepo.updateInventory(player.uniqueId, inventory)
         }
     }

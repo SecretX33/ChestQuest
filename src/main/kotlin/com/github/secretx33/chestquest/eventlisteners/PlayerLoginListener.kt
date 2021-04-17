@@ -1,6 +1,5 @@
 package com.github.secretx33.chestquest.eventlisteners
 
-import com.github.secretx33.chestquest.repository.ChestRepo
 import com.github.secretx33.chestquest.repository.PlayerProgressRepo
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler

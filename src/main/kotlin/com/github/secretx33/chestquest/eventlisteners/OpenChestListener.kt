@@ -33,14 +33,11 @@ class OpenChestListener(plugin: Plugin, private val chestRepo: ChestRepo, privat
         val chestOrder = chestRepo.getQuestChestOrder(chest.location)
 
         // if player cannot open chest
-        if(!progressRepo.canOpenChest(player, chestOrder)) {
-            println("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player)}, he cannot open a chest that has a order of $chestOrder")
-            return
-        }
+        if(!progressRepo.canOpenChest(player, chestOrder)) return
+
         // open chest inventory to the player
         player.openInventory(chestRepo.getChestContent(chest, player))
         player.simulateChestOpen(chest)
-        println("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player)}")
     }
 
     private fun Player.simulateChestOpen(chest: Chest) {

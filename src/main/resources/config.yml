@@ -17,6 +17,5 @@
 # +------------------------------------------------------+ #
 ############################################################
 
-general:
-  automatically-remove-db-entries-from-missing-world: true
-  debug: false
+# Remove all chest quests and their linked chest inventories from any missing World (if the plugin cannot find the world, it'll remove the entries from database automatically and warn in the console)
+automatically-remove-db-entries-from-missing-world: true

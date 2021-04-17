@@ -1,12 +1,15 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
-    dependencies {
-        classpath("net.sf.proguard", "proguard-base", "6.2.2")
-        classpath("net.sf.proguard", "proguard-gradle", "6.2.2")
-    }
     repositories {
+        google()
+        jcenter()
         mavenCentral()
+    }
+    dependencies {
+        classpath("com.guardsquare:proguard-gradle:7.0.0")/* {
+            exclude("com.android.tools.build")
+        }*/
     }
 }
 
@@ -57,7 +60,7 @@ tasks.shadowJar {
     val dependencyPackage = "${rootProject.group}.dependencies.${rootProject.name.toLowerCase()}"
     relocate("com.zaxxer.hikari", "${dependencyPackage}.hikari")
     relocate("com.squareup.moshi", "${dependencyPackage}.moshi")
-    relocate("okio", ".${dependencyPackage}.moshi.okio")
+    relocate("okio", "${dependencyPackage}.moshi.okio")
     relocate("org.koin", "${dependencyPackage}.koin")
     relocate("org.slf4j", "${dependencyPackage}.slf4j")
     relocate("kotlin", "${dependencyPackage}.kotlin")
@@ -71,7 +74,7 @@ tasks.shadowJar {
 }
 
 tasks.register<proguard.gradle.ProGuardTask>("proguard") {
-    configuration("proguard.pro")
+    configuration("proguard-rules.pro")
 }
 
 tasks.test { useJUnitPlatform() }

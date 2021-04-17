@@ -1,6 +1,7 @@
 package com.github.secretx33.chestquest.database
 
 import com.github.secretx33.chestquest.config.Config
+import com.github.secretx33.chestquest.config.ConfigKeys
 import com.github.secretx33.chestquest.utils.formattedString
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
@@ -27,7 +28,7 @@ import java.util.*
 import java.util.logging.Logger
 
 @KoinApiExtension
-class SQLite(plugin: Plugin, private val log: Logger) {
+class SQLite(plugin: Plugin, private val config: Config, private val log: Logger) {
 
     private val url = "jdbc:sqlite:${plugin.dataFolder.absolutePath}${folderSeparator}database.db"
     private val ds = HikariDataSource(hikariConfig.apply { jdbcUrl = url })
@@ -50,7 +51,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 log.fine("Initiated DB")
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to connect to the database and create the tables\n${e.printStackTrace()}")
+            log.severe("ERROR: An exception occurred while trying to connect to the database and create the tables.\n${e.printStackTrace()}")
         }
     }
 
@@ -65,7 +66,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.formattedString()})\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.formattedString()}).\n${e.stackTraceToString()}")
         }
     }
 
@@ -78,7 +79,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.formattedString()} to the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.formattedString()} to the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -91,7 +92,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -104,7 +105,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to remove a Quest Chest from the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to remove a Quest Chest from the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -118,7 +119,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 executeBatch()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to buck remove all quest chests from worlds\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to buck remove all quest chests from worlds.\n${e.stackTraceToString()}")
         }
     }
 
@@ -132,7 +133,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 executeBatch()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to remove a list of quest chests\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to remove a list of quest chests.\n${e.stackTraceToString()}")
         }
     }
 
@@ -143,7 +144,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to remove a Quest Chest from the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to remove a Quest Chest from the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -165,7 +166,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 }
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.formattedString()} from database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.formattedString()} from database.\n${e.stackTraceToString()}")
         }
         return newEmptyInventory()
     }
@@ -181,7 +182,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                     val chestLoc = rs.getString("location").toLocation()
                     val world = chestLoc.world
 
-                    if(world == null && Config.removeDBEntriesIfWorldIsMissing){
+                    if(world == null && removeDBEntriesIfWorldIsMissing){
                         UUID_WORLD_PATTERN.getOrNull(rs.getString("location"), 1)?.let {
                             worldRemoveSet.add(it)
                         }
@@ -196,13 +197,13 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 }
             }
             if(worldRemoveSet.isNotEmpty()){
-                worldRemoveSet.forEach { log.warning("WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
+                worldRemoveSet.forEach { log.warning("WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it.") }
                 removeQuestChestsByWorldUuid(worldRemoveSet)
             }
             if(chestRemoveSet.isNotEmpty())
                 removeQuestChestsByLocation(chestRemoveSet)
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to get all chest quests async\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to get all chest quests async.\n${e.stackTraceToString()}")
         }
         chests
     }
@@ -215,7 +216,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 if(rs.next()) return rs.getInt("progress")
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database.\n${e.stackTraceToString()}")
         }
         return null
     }
@@ -231,7 +232,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while updating an inventory to the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while updating an inventory to the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -243,7 +244,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while updating chest order of ${location.formattedString()} to the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while updating chest order of ${location.formattedString()} to the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -255,7 +256,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 execute()
             }
         } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database\n${e.stackTraceToString()}")
+            log.severe("ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database.\n${e.stackTraceToString()}")
         }
     }
 
@@ -268,6 +269,9 @@ class SQLite(plugin: Plugin, private val log: Logger) {
     private fun Inventory.toJson() = jsonInv.toJson(this)
 
     private fun Regex.getOrNull(string: String, group: Int) = find(string)?.groupValues?.get(group)
+
+    private val removeDBEntriesIfWorldIsMissing: Boolean
+        get() = config.get(ConfigKeys.REMOVE_CHEST_QUESTS_WORLD_MISSING)
 
     private fun AutoCloseable?.safeClose() { runCatching { this?.close() } }
 

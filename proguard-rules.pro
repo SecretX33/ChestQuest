@@ -29,7 +29,7 @@
 -keepnames class com.github.secretx33.dependencies.chestquest.sqlite.**
 
 #-dontshrink
--dontobfuscate
+#-dontobfuscate
 #-dontoptimize
 
 # Keep your main class
@@ -38,6 +38,12 @@
 # Keep event handlers
 -keep,allowobfuscation,allowoptimization class * extends org.bukkit.event.Listener {
     @org.bukkit.event.EventHandler <methods>;
+}
+
+# Keep serialization adapter classes from moshi
+-keep,allowobfuscation class com.github.secretx33.chestquest.** {
+    @com.github.secretx33.dependencies.chestquest.moshi.FromJson <methods>;
+    @com.github.secretx33.dependencies.chestquest.moshi.ToJson <methods>;
 }
 
 # Keep main package name (spigot forum rule)
@@ -58,9 +64,9 @@
 
 # Keep static fields in custom Events
 -keepclassmembers,allowoptimization class com.github.secretx33.chestquest.** extends org.bukkit.event.Event {
-    @com.github.secretx33.dependencies.kotlin.jvm.JvmStatic <fields>;
+    @com.github.secretx33.dependencies.chestquest.kotlin.jvm.JvmStatic <fields>;
     public static final <fields>;
-    @com.github.secretx33.dependencies.kotlin.jvm.JvmStatic <methods>;
+    @com.github.secretx33.dependencies.chestquest.kotlin.jvm.JvmStatic <methods>;
     public static <methods>;
 }
 

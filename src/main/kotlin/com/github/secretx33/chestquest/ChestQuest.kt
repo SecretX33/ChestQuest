@@ -20,8 +20,9 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
     private val mod = module {
         single<Plugin> { this@ChestQuest } bind JavaPlugin::class
         single { get<Plugin>().logger }
+        single { Config(get()) }
         single { Reflections() }
-        single { SQLite(get(), get()) }
+        single { SQLite(get(), get(), get()) }
         single { ChestRepo(get(), get()) }
         single { PlayerProgressRepo(get()) }
         single { Commands(get()) }
@@ -34,12 +35,10 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
     }
 
     override fun onEnable() {
-        saveDefaultConfig()
         startKoin {
             printLogger(Level.ERROR)
             loadKoinModules(mod)
         }
-        Config.reloadConfig()
         get<BreakChestListener>()
         get<CloseChestListener>()
         get<ChestItemMoveListener>()

@@ -1,10 +1,6 @@
 package com.github.secretx33.chestquest.repository
 
 import com.github.secretx33.chestquest.database.SQLite
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.koin.core.component.KoinApiExtension
 import java.util.*
