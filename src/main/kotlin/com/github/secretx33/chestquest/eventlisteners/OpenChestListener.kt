@@ -33,15 +33,14 @@ class OpenChestListener(plugin: Plugin, private val chestRepo: ChestRepo, privat
         val chestOrder = chestRepo.getQuestChestOrder(chest.location)
 
         // if player cannot open chest
-        if(!progressRepo.canOpenChest(player.uniqueId, chestOrder)) {
-            println("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player.uniqueId)}, he cannot open a chest that has a order of $chestOrder")
+        if(!progressRepo.canOpenChest(player, chestOrder)) {
+            println("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player)}, he cannot open a chest that has a order of $chestOrder")
             return
         }
-
         // open chest inventory to the player
         player.openInventory(chestRepo.getChestContent(chest, player))
         player.simulateChestOpen(chest)
-        println("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player.uniqueId)}")
+        println("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player)}")
     }
 
     private fun Player.simulateChestOpen(chest: Chest) {
@@ -62,7 +61,6 @@ class OpenChestListener(plugin: Plugin, private val chestRepo: ChestRepo, privat
         wrapper.sendPacket(this)
     }
 
-    private fun PlayerInteractEvent.isChestQuest(): Boolean {
-        return action == Action.RIGHT_CLICK_BLOCK && clickedBlock?.isChest() == true && chestRepo.isQuestChest(clickedBlock.location)
-    }
+    private fun PlayerInteractEvent.isChestQuest() = action == Action.RIGHT_CLICK_BLOCK && clickedBlock?.isChest() == true && chestRepo.isQuestChest(clickedBlock.location)
+
 }

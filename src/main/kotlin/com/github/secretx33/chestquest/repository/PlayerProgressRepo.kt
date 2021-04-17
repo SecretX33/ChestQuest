@@ -15,38 +15,22 @@ class PlayerProgressRepo(private val db: SQLite) {
 
     private val playerProgress: MutableMap<UUID, Int> = ConcurrentHashMap()
 
-    init { loadDataFromDB() }
-
-    private fun loadDataFromDB() = CoroutineScope(Dispatchers.Default).launch {
-        playerProgress.clear()
-        playerProgress.putAll(db.getAllPlayerProgressAsync().await())
-    }
-
     fun removeEntryOf(player: Player) = playerProgress.remove(player.uniqueId)
 
-    fun getPlayerProgress(playerUuid: UUID): Int {
-        return playerProgress.getOrPut(playerUuid) {
-//            db.getPlayerProgress(playerUuid) ?: 0.also { db.addPlayerProgress(playerUuid, $it) }
-            val dbEntry = db.getPlayerProgress(playerUuid)
-            if(dbEntry != null){
-                println("Got progress of ${Bukkit.getPlayer(playerUuid).name ?: playerUuid.toString()} from Database")
-                dbEntry
-            } else {
-                println("Player ${Bukkit.getPlayer(playerUuid).name ?: playerUuid.toString()} had no progress before, setting it to zero")
-                db.addPlayerProgress(playerUuid, 0)
-                0
-            }
+    fun getPlayerProgress(player: Player): Int {
+        return playerProgress.getOrPut(player.uniqueId) {
+            db.getPlayerProgress(player.uniqueId) ?: 0.also { db.addPlayerProgress(player.uniqueId, it) }
         }
     }
 
-    fun canOpenChest(playerUuid: UUID, chestOrder: Int): Boolean {
-        val progress = getPlayerProgress(playerUuid)
+    fun canOpenChest(player: Player, chestOrder: Int): Boolean {
+        val progress = getPlayerProgress(player)
 
         if(chestOrder - 1 > progress)
             return false
         if(chestOrder == progress + 1) {
-            playerProgress[playerUuid] = progress + 1
-            db.updatePlayerProgress(playerUuid, progress + 1)
+            playerProgress[player.uniqueId] = progress + 1
+            db.updatePlayerProgress(player.uniqueId, progress + 1)
         }
         return true
     }

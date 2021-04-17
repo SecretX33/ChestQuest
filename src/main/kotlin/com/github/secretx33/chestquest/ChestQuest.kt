@@ -29,6 +29,7 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
         single { CloseChestListener(get(), get(), get()) }
         single { ChestItemMoveListener(get(), get(), get()) }
         single { OpenChestListener(get(), get(), get()) }
+        single { PlayerLoginListener(get(), get()) }
         single { PlayerLogoutListener(get(), get(), get()) }
     }
 
@@ -43,9 +44,10 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
         get<CloseChestListener>()
         get<ChestItemMoveListener>()
         get<OpenChestListener>()
+        get<PlayerLoginListener>()
         get<PlayerLogoutListener>()
         get<Commands>()
-        logger.info("loaded")
+        logger.info("loaded.")
     }
 
     override fun onDisable() {

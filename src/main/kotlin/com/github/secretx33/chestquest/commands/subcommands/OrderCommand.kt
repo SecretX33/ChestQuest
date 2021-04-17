@@ -4,7 +4,6 @@ import com.github.secretx33.chestquest.repository.ChestRepo
 import com.github.secretx33.chestquest.utils.CustomKoinComponent
 import com.github.secretx33.chestquest.utils.inject
 import com.github.secretx33.chestquest.utils.isChest
-import com.github.secretx33.chestquest.utils.message
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -29,7 +28,7 @@ class OrderCommand : SubCommand(), CustomKoinComponent {
         }
         // inform chest order to player
         val order = chestRepo.getQuestChestOrder(chest.location)
-        player.message("This chest order is ${ChatColor.RED}$order")
+        player.sendMessage("This chest order is ${ChatColor.RED}$order")
     }
 
     override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {

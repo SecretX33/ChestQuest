@@ -21,12 +21,12 @@ class UnmarkCommand : SubCommand(), CustomKoinComponent {
 
         // if chest is not a quest chest
         if(!chestRepo.isQuestChest(chest.location)) {
-            player.message("${ChatColor.RED}This chest is NOT a Quest Chest")
+            player.sendMessage("${ChatColor.RED}This chest is NOT a Quest Chest")
             return
         }
         // remove quest chest
         chestRepo.removeQuestChest(chest.location)
-        player.message("Converted chest at ${chest.coordinates()} back to a normal chest")
+        player.sendMessage("Converted chest at ${chest.coordinates()} back to a normal chest")
 
     }
 

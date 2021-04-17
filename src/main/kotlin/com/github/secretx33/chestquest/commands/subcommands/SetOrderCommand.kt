@@ -4,7 +4,6 @@ import com.github.secretx33.chestquest.repository.ChestRepo
 import com.github.secretx33.chestquest.utils.CustomKoinComponent
 import com.github.secretx33.chestquest.utils.inject
 import com.github.secretx33.chestquest.utils.isChest
-import com.github.secretx33.chestquest.utils.message
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -35,7 +34,7 @@ class SetOrderCommand : SubCommand(), CustomKoinComponent {
 
         // modify chest order to typed order
         val oldOrder = chestRepo.changeOrderQuestChest(chest.location, order)
-        player.message("Chest order is now ${ChatColor.RED}$order${ChatColor.WHITE} (previously $oldOrder)")
+        player.sendMessage("Chest order is now ${ChatColor.RED}$order${ChatColor.WHITE} (previously $oldOrder)")
     }
 
     override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {

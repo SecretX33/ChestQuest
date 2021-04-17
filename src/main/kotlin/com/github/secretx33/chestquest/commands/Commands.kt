@@ -13,8 +13,7 @@ import org.koin.core.component.KoinApiExtension
 @KoinApiExtension
 class Commands(plugin: JavaPlugin) : CommandExecutor, TabCompleter {
 
-    private val subcommands: List<SubCommand> = listOf(DebugCommand(),
-        MarkCommand(),
+    private val subcommands: List<SubCommand> = listOf(MarkCommand(),
         OrderCommand(),
         ReloadCommand(),
         ResetProgressCommand(),

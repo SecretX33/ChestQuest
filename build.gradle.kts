@@ -70,11 +70,6 @@ tasks.shadowJar {
     exclude("META-INF/**")
 }
 
-tasks.register("customCleanUp", Delete::class){
-    delete("$rootDir/build/libs/${tasks.shadowJar.get().archiveFileName.get()}")
-}
-tasks.shadowJar.get().dependsOn(tasks["customCleanUp"])
-
 tasks.register<proguard.gradle.ProGuardTask>("proguard") {
     configuration("proguard.pro")
 }

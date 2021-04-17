@@ -207,26 +207,6 @@ class SQLite(plugin: Plugin, private val log: Logger) {
         chests
     }
 
-    /**
-     * Get all entries of database for Player Progress table, which stores player progress in the quest chain
-     * @return Deferred<Map<UUID, Int>> UUID is the player UUID, and Int is his progress in the quest chain, used to prevent him of opening chests that have higher number than the player progress + 1
-     */
-    fun getAllPlayerProgressAsync(): Deferred<Map<UUID, Int>> = CoroutineScope(Dispatchers.IO).async {
-        val map = HashMap<UUID, Int>()
-        try {
-            withQueryStatement(SELECT_ALL_FROM_PLAYER_PROGRESS) { rs ->
-                while(rs.next()){
-                    val key = UUID.fromString(rs.getString("player_uuid"))
-                    val value = rs.getInt("progress")
-                    map[key] = value
-                }
-            }
-        } catch (e: SQLException) {
-            log.severe("ERROR: An exception occurred while trying to get all player progress from database async\n${e.stackTraceToString()}")
-        }
-        map
-    }
-
     fun getPlayerProgress(playerUuid: UUID): Int? {
         try {
             withQueryStatement(SELECT_PLAYER_PROCESS, {

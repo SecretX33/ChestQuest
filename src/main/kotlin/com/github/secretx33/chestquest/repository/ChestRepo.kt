@@ -20,8 +20,8 @@ import java.util.logging.Logger
 @KoinApiExtension
 class ChestRepo(private val db: SQLite, private val log: Logger) {
 
-    private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
-    private val questChests: MutableMap<Location, Int> = ConcurrentHashMap()
+    private val questChests   = ConcurrentHashMap<Location, Int>()
+    private val chestContents = ConcurrentHashMap<Pair<Location, UUID>, Inventory>()
 
     init { loadDataFromDB() }
 
@@ -33,15 +33,10 @@ class ChestRepo(private val db: SQLite, private val log: Logger) {
     fun getChestContent(chest: Chest, player: Player): Inventory {
         val key = Pair(chest.location, player.uniqueId)
         return chestContents.getOrPut(key) {
-//            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv) }
-            val dbEntry = db.getChestContent(chest.location, player.uniqueId)
-            if(dbEntry != null){
-                println("Got inventory of ${player.name} from Database")
-                dbEntry
-            } else {
-                println("Got inventory of ${player.name} from Clone")
-                chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv) }
-            }
+            db.getChestContent(chest.location, player.uniqueId).also { println("Got inventory of ${player.name} from Database") }
+                ?: chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv)
+                    println("Got inventory of ${player.name} from Clone")
+                }
         }
     }
 
