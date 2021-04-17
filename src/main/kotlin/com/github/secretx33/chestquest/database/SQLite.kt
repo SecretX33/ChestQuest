@@ -1,9 +1,7 @@
 package com.github.secretx33.chestquest.database
 
 import com.github.secretx33.chestquest.config.Config
-import com.github.secretx33.chestquest.utils.Utils.consoleMessage
-import com.github.secretx33.chestquest.utils.Utils.debugMessage
-import com.github.secretx33.chestquest.utils.prettyString
+import com.github.secretx33.chestquest.utils.formattedString
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.zaxxer.hikari.HikariConfig
@@ -44,7 +42,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.prepareStatement(CREATE_PLAYER_PROGRESS).use { it.execute() }
                 conn.prepareStatement(CREATE_TRIGGER).use { it.execute() }
                 conn.commit()
-                debugMessage("Initiated DB")
+                log.fine("Initiated DB")
             }
         } catch (e: SQLException) {
             log.severe("ERROR: An exception occurred while trying to connect to the database and create the tables\n${e.printStackTrace()}")
@@ -65,7 +63,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.prettyString()})")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while adding a specific Quest Chest (${chestLoc.formattedString()})")
             e.printStackTrace()
         }
     }
@@ -74,7 +72,6 @@ class SQLite(plugin: Plugin, private val log: Logger) {
         try {
             ds.connection.use { conn: Connection ->
                 val serializedInv = jsonInv.toJson(inv)
-                debugMessage("Inventory is: $serializedInv")
                 conn.prepareStatement(INSERT_CHEST_CONTENTS).use { prep ->
                     prep.setString(1, jsonLoc.toJson(chestLoc))
                     prep.setString(2, playerUuid.toString())
@@ -84,7 +81,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.prettyString()} to the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to add a content of the chest ${chestLoc.formattedString()} to the database")
             e.printStackTrace()
         }
     }
@@ -101,7 +98,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
             e.printStackTrace()
         }
     }
@@ -118,7 +115,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
             e.printStackTrace()
         }
     }
@@ -136,7 +133,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to buck remove all quest chests from worlds")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to buck remove all quest chests from worlds")
             e.printStackTrace()
         }
     }
@@ -154,7 +151,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a list of quest chests")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to remove a list of quest chests")
             e.printStackTrace()
         }
     }
@@ -169,7 +166,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to remove a Quest Chest from the database")
             e.printStackTrace()
         }
     }
@@ -192,15 +189,15 @@ class SQLite(plugin: Plugin, private val log: Logger) {
             if(rs.next()){
                 val inv = jsonInv.fromJson(rs.getString("inventory"))
                 when {
-                    inv == null -> consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, inventory came null, report this to SecretX!")
-                    inv.holder == null -> consoleMessage("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.prettyString()}, holder came null, report this to SecretX!")
+                    inv == null -> log.severe("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, inventory came null, report this to SecretX!")
+                    inv.holder == null -> log.severe("${ChatColor.RED}While trying to get the chestContent of Player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) in ${chestLoc.formattedString()}, holder came null, report this to SecretX!")
                     else -> return inv
                 }
             } else {
                 return null
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.prettyString()} from database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to get inventory of chest at ${chestLoc.formattedString()} from database")
             e.printStackTrace()
         } finally {
             rs?.safeClose()
@@ -231,7 +228,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                     }
                 } else if(chestLoc.world != null) {
                     if (chestLoc.world.getBlockAt(chestLoc).state !is Container) {
-                        consoleMessage("${ChatColor.RED}WARNING: The chest located at '${chestLoc.prettyString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
+                        log.severe("${ChatColor.RED}WARNING: The chest located at '${chestLoc.formattedString()}' was not found, queuing its removal to preserve DB integrity.${ChatColor.WHITE} Usually this happens when a Quest Chest is broken with this plugin being disabled or missing.")
                         chestRemoveSet.add(chestLoc)
                     } else {
                         chests[chestLoc] = rs.getInt("chest_order")
@@ -239,13 +236,13 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 }
             }
             if(worldRemoveSet.isNotEmpty()){
-                worldRemoveSet.forEach { consoleMessage("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
+                worldRemoveSet.forEach { log.severe("${ChatColor.RED}WARNING: The world with UUID '$it' was not found, removing ALL chests and inventories linked to it") }
                 removeQuestChestsByWorldUuid(worldRemoveSet)
             }
             if(chestRemoveSet.isNotEmpty())
                 removeQuestChestsByLocation(chestRemoveSet)
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to connect to the database")
             e.printStackTrace()
         } finally {
             rs?.safeClose()
@@ -274,7 +271,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 }
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get all player progress from database async")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to get all player progress from database async")
             e.printStackTrace()
         }
         map
@@ -294,7 +291,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 }
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to get progress of player ${Bukkit.getPlayer(playerUuid)?.name} ($playerUuid) from database")
             e.printStackTrace()
         }
         return null
@@ -314,7 +311,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while updating an inventory to the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while updating an inventory to the database")
             e.printStackTrace()
         }
     }
@@ -330,7 +327,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while updating chest order of ${location.prettyString()} to the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while updating chest order of ${location.formattedString()} to the database")
             e.printStackTrace()
         }
     }
@@ -346,7 +343,7 @@ class SQLite(plugin: Plugin, private val log: Logger) {
                 conn.commit()
             }
         } catch (e: SQLException) {
-            consoleMessage("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
+            log.severe("${ChatColor.RED}ERROR: An exception occurred while trying to add player ${Bukkit.getPlayer(playerUuid)?.name ?: "Unknown"} ($playerUuid) progress of $progress to the database")
             e.printStackTrace()
         }
     }

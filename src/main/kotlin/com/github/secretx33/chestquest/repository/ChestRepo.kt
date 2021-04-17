@@ -1,10 +1,9 @@
 package com.github.secretx33.chestquest.repository
 
 import com.github.secretx33.chestquest.database.SQLite
-import com.github.secretx33.chestquest.utils.Utils.debugMessage
 import com.github.secretx33.chestquest.utils.clone
+import com.github.secretx33.chestquest.utils.formattedString
 import com.github.secretx33.chestquest.utils.locationByAllMeans
-import com.github.secretx33.chestquest.utils.prettyString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,28 +34,28 @@ class ChestRepo(private val db: SQLite) {
 //            db.getChestContent(chest.location, player.uniqueId) ?: chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv) }
             val dbEntry = db.getChestContent(chest.location, player.uniqueId)
             if(dbEntry != null){
-                debugMessage("Got inventory of ${player.name} from Database")
+                println("Got inventory of ${player.name} from Database")
                 dbEntry
             } else {
-                debugMessage("Got inventory of ${player.name} from Clone")
+                println("Got inventory of ${player.name} from Clone")
                 chest.inventory.clone().also { inv -> db.addChestContent(chest.location, player.uniqueId, inv) }
             }
         }
     }
 
     fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
-        chestContents.toMap().filterKeys { (_, uuid) -> uuid == playerUuid }.forEach { (key, _) -> chestContents.remove(key) }
+        chestContents.filterKeys { (_, uuid) -> uuid == playerUuid }.let { chestContents.keys.removeAll(it.keys) }
     }
 
     fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.Default).launch {
         var location = inventory.locationByAllMeans()
         if(location == null) {
-            val list = chestContents.toMap().filter { (_, inv) -> inv === inventory }.map { (k,_) -> k.first }
-            if(list.isNotEmpty()){
-                debugMessage("INFO: Localization came from 'transformation on chestContents' and it is $location")
-                location = list[0]
+            val loc = chestContents.entries.firstOrNull { (_, inv) -> inv === inventory }?.key?.first
+            if(loc != null){
+                println("INFO: Localization came from 'transformation on chestContents' and it is $location")
+                location = loc
             } else {
-                debugMessage("WARNING: Could not infer location of inventory not even from chestContents, inventory was NOT saved")
+                println("WARNING: Could not infer location of inventory not even from chestContents, inventory was NOT saved")
                 return@launch
             }
         }
@@ -87,11 +86,11 @@ class ChestRepo(private val db: SQLite) {
         }
     }
 
-    fun getQuestChestOrder(location: Location): Int = questChests[location] ?: throw NoSuchElementException("Chest ${location.prettyString()} was not found")
+    fun getQuestChestOrder(location: Location): Int = questChests[location] ?: throw NoSuchElementException("Chest ${location.formattedString()} was not found")
 
     fun removeQuestChest(location: Location) = CoroutineScope(Dispatchers.Default).launch {
         questChests.remove(location)
-        chestContents.toMap().filterKeys { it.first == location }.forEach { chestContents.remove(it.key) }
+        chestContents.filterKeys { it.first == location }.let { chestContents.keys.removeAll(it.keys) }
         db.removeQuestChest(location)
     }
 }

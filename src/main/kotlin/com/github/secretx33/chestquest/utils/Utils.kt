@@ -26,7 +26,7 @@ object Utils: CustomKoinComponent {
 fun Inventory.clone(): Inventory {
     val cloned = Bukkit.createInventory(holder, type)
 
-    this.contents.forEachIndexed { slot, item: ItemStack? ->
+    contents.forEachIndexed { slot, item: ItemStack? ->
         item?.let { cloned.setItem(slot, reflections.clone(item)) }
     }
     return cloned
@@ -53,4 +53,4 @@ fun Block.isQuestChest(): Boolean = isChest() && chestRepo.isQuestChest(location
 
 fun Block.coordinates(): String = "${location.x.toLong()} ${location.y.toLong()} ${location.z.toLong()}"
 
-fun Location.prettyString(): String = "World: ${world?.name ?: "Unknown"}, ${x.toLong()}, ${y.toLong()}, ${z.toLong()}"
+fun Location.formattedString(): String = "World: ${world?.name ?: "Unknown"}, ${x.toLong()}, ${y.toLong()}, ${z.toLong()}"
