@@ -22,9 +22,7 @@ class PlayerProgressRepo(private val db: SQLite) {
         playerProgress.putAll(db.getAllPlayerProgressAsync().await())
     }
 
-    fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
-        playerProgress.remove(playerUuid)
-    }
+    fun removeEntryOf(player: Player) = playerProgress.remove(player.uniqueId)
 
     fun getPlayerProgress(playerUuid: UUID): Int {
         return playerProgress.getOrPut(playerUuid) {

@@ -19,10 +19,10 @@ class ChestQuest : JavaPlugin(), CustomKoinComponent {
 
     private val mod = module {
         single<Plugin> { this@ChestQuest } bind JavaPlugin::class
-        single { logger }
+        single { get<Plugin>().logger }
         single { Reflections() }
         single { SQLite(get(), get()) }
-        single { ChestRepo(get()) }
+        single { ChestRepo(get(), get()) }
         single { PlayerProgressRepo(get()) }
         single { Commands(get()) }
         single { BreakChestListener(get(), get()) }

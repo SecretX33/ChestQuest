@@ -25,24 +25,23 @@ class OpenChestListener(plugin: Plugin, private val chestRepo: ChestRepo, privat
     init { Bukkit.getPluginManager().registerEvents(this, plugin) }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    private fun onInteract(event: PlayerInteractEvent) {
-        if(!event.isChestQuest()) return
+    private fun PlayerInteractEvent.onChestOpen() {
+        if(!isChestQuest() || player.canEditQC()) return
 
-        val player = event.player
-        if(player.canEditQC()) return
-
-        val chest = event.clickedBlock?.state as Chest
+        isCancelled = true
+        val chest = clickedBlock?.state as Chest
         val chestOrder = chestRepo.getQuestChestOrder(chest.location)
 
+        // if player cannot open chest
         if(!progressRepo.canOpenChest(player.uniqueId, chestOrder)) {
-            event.isCancelled = true
             println("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player.uniqueId)}, he cannot open a chest that has a order of $chestOrder")
-        } else {
-            event.isCancelled = true
-            player.openInventory(chestRepo.getChestContent(chest, player))
-            player.simulateChestOpen(chest)
-            println("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player.uniqueId)}")
+            return
         }
+
+        // open chest inventory to the player
+        player.openInventory(chestRepo.getChestContent(chest, player))
+        player.simulateChestOpen(chest)
+        println("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player.uniqueId)}")
     }
 
     private fun Player.simulateChestOpen(chest: Chest) {

@@ -25,7 +25,6 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 import java.util.logging.Logger
-import java.util.regex.Pattern
 
 @KoinApiExtension
 class SQLite(plugin: Plugin, private val log: Logger) {

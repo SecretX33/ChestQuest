@@ -23,7 +23,7 @@ class CloseChestListener(plugin: Plugin, private val chestRepo: ChestRepo, priva
     init { Bukkit.getPluginManager().registerEvents(this, plugin) }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    private fun InventoryCloseEvent.onInventoryClose() {
+    private fun InventoryCloseEvent.onChestClose() {
         if(player !is Player || player.canEditQC() || !chestRepo.isChestInventory(inventory)) return
 
         // update inventory

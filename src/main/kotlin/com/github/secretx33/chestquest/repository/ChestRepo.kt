@@ -7,6 +7,7 @@ import com.github.secretx33.chestquest.utils.locationByAllMeans
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Chest
 import org.bukkit.entity.Player
@@ -14,9 +15,10 @@ import org.bukkit.inventory.Inventory
 import org.koin.core.component.KoinApiExtension
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Logger
 
 @KoinApiExtension
-class ChestRepo(private val db: SQLite) {
+class ChestRepo(private val db: SQLite, private val log: Logger) {
 
     private val chestContents: MutableMap<Pair<Location, UUID>, Inventory> = ConcurrentHashMap()
     private val questChests: MutableMap<Location, Int> = ConcurrentHashMap()
@@ -43,8 +45,10 @@ class ChestRepo(private val db: SQLite) {
         }
     }
 
-    fun removeEntriesOf(playerUuid: UUID) = CoroutineScope(Dispatchers.Default).launch {
-        chestContents.filterKeys { (_, uuid) -> uuid == playerUuid }.let { chestContents.keys.removeAll(it.keys) }
+    fun removeEntriesOf(player: Player) {
+        println("chestContents before removing: ${chestContents.size} items")
+        chestContents.filterKeys { (_, uuid) -> uuid == player.uniqueId }.let { chestContents.keys.removeAll(it.keys) }
+        println("chestContents after removing: ${chestContents.size} items")
     }
 
     fun updateInventory(playerUuid: UUID, inventory: Inventory) = CoroutineScope(Dispatchers.Default).launch {
@@ -52,10 +56,10 @@ class ChestRepo(private val db: SQLite) {
         if(location == null) {
             val loc = chestContents.entries.firstOrNull { (_, inv) -> inv === inventory }?.key?.first
             if(loc != null){
-                println("INFO: Localization came from 'transformation on chestContents' and it is $location")
+                log.warning("WARNING: Localization of chest inventory for player ${Bukkit.getPlayer(playerUuid)?.name} came from fallback 'search inventory on chestcontent' and it is $location")
                 location = loc
             } else {
-                println("WARNING: Could not infer location of inventory not even from chestContents, inventory was NOT saved")
+                log.severe("ERROR: Could not infer location of inventory, not even from chestContents, ${Bukkit.getPlayer(playerUuid)?.name}'s inventory was NOT saved")
                 return@launch
             }
         }
