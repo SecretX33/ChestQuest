@@ -25,8 +25,6 @@ import java.sql.SQLException
 import java.util.*
 import java.util.logging.Logger
 import java.util.regex.Pattern
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
 
 @KoinApiExtension
 class SQLite(plugin: Plugin, private val log: Logger) {

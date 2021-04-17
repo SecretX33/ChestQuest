@@ -20,16 +20,16 @@ class OrderCommand : SubCommand(), CustomKoinComponent {
     private val chestRepo by inject<ChestRepo>()
 
     override fun onCommandByPlayer(player: Player, alias: String, strings: Array<String>) {
-        player.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let { chest ->
-            // if chest is not quest chest, warn and return
-            if(!chestRepo.isQuestChest(chest.location)) {
-                player.sendMessage("${ChatColor.RED}This chest is not a Quest Chest, and so it doesn't have order")
-                return
-            }
-            // inform chest order to player
-            val order = chestRepo.getQuestChestOrder(chest.location)
-            player.message("This chest order is ${ChatColor.RED}$order")
+        val chest = player.getTargetBlock(null, 5)?.takeIf { it.isChest() } ?: return
+
+        // if chest is not quest chest, warn and return
+        if(!chestRepo.isQuestChest(chest.location)) {
+            player.sendMessage("${ChatColor.RED}This chest is not a Quest Chest, and so it doesn't have order")
+            return
         }
+        // inform chest order to player
+        val order = chestRepo.getQuestChestOrder(chest.location)
+        player.message("This chest order is ${ChatColor.RED}$order")
     }
 
     override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {

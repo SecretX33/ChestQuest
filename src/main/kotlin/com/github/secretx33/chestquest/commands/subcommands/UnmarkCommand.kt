@@ -18,6 +18,7 @@ class UnmarkCommand : SubCommand(), CustomKoinComponent {
 
     override fun onCommandByPlayer(player: Player, alias: String, strings: Array<String>) {
         val chest = player.getTargetBlock(null, 5)?.takeIf { it.isChest() } ?: return
+
         // if chest is not a quest chest
         if(!chestRepo.isQuestChest(chest.location)) {
             player.message("${ChatColor.RED}This chest is NOT a Quest Chest")

@@ -1,10 +1,9 @@
-package com.github.secretx33.chestquest.events
+package com.github.secretx33.chestquest.eventlisteners
 
 import com.comphenix.protocol.wrappers.BlockPosition
 import com.github.secretx33.chestquest.packets.WrapperPlayServerBlockAction
 import com.github.secretx33.chestquest.repository.ChestRepo
 import com.github.secretx33.chestquest.repository.PlayerProgressRepo
-import com.github.secretx33.chestquest.utils.Utils.debugMessage
 import com.github.secretx33.chestquest.utils.canEditQC
 import com.github.secretx33.chestquest.utils.isChest
 import org.bukkit.Bukkit
@@ -21,7 +20,7 @@ import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
 
 @KoinApiExtension
-class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo, private val progressRepo: PlayerProgressRepo) : Listener {
+class OpenChestListener(plugin: Plugin, private val chestRepo: ChestRepo, private val progressRepo: PlayerProgressRepo) : Listener {
 
     init { Bukkit.getPluginManager().registerEvents(this, plugin) }
 
@@ -37,12 +36,12 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo, private v
 
         if(!progressRepo.canOpenChest(player.uniqueId, chestOrder)) {
             event.isCancelled = true
-            debugMessage("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player.uniqueId)}, he cannot open a chest that has a order of $chestOrder")
+            println("Player ${player.name} progress still ${progressRepo.getPlayerProgress(player.uniqueId)}, he cannot open a chest that has a order of $chestOrder")
         } else {
             event.isCancelled = true
             player.openInventory(chestRepo.getChestContent(chest, player))
             player.simulateChestOpen(chest)
-            debugMessage("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player.uniqueId)}")
+            println("Player ${player.name} can open chest of order $chestOrder because he has progress of ${progressRepo.getPlayerProgress(player.uniqueId)}")
         }
     }
 
@@ -55,10 +54,12 @@ class OpenChestEvent(plugin: Plugin, private val chestRepo: ChestRepo, private v
         if(!Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")) return
 
         val wrapper = WrapperPlayServerBlockAction()
-        wrapper.blockType = Material.CHEST
-        wrapper.location = BlockPosition(chest.location.toVector())
-        wrapper.byte1 = 1 // update number of people with chest open action ID
-        wrapper.byte2 = 1 // opening (since one has open it)
+        wrapper.apply {
+            blockType = Material.CHEST
+            location = BlockPosition(chest.location.toVector())
+            byte1 = 1  // update number of people with chest open action ID
+            byte2 = 1  // opening (since one has open it)
+        }
         wrapper.sendPacket(this)
     }
 

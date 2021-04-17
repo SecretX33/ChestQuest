@@ -1,6 +1,5 @@
 package com.github.secretx33.chestquest.utils
 
-import com.github.secretx33.chestquest.config.Config
 import com.github.secretx33.chestquest.config.Const.PLUGIN_CHAT_PREFIX
 import com.github.secretx33.chestquest.config.Const.PLUGIN_PERMISSION_PREFIX
 import com.github.secretx33.chestquest.repository.ChestRepo
@@ -12,7 +11,6 @@ import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.Container
 import org.bukkit.command.CommandSender
-import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
@@ -20,15 +18,8 @@ import org.koin.core.component.KoinApiExtension
 
 @KoinApiExtension
 object Utils: CustomKoinComponent {
-    private val console: ConsoleCommandSender by inject()
     val chestRepo: ChestRepo by inject()
     val reflections: Reflections by inject()
-
-    fun consoleMessage(msg: String) = console.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
-
-    fun debugMessage(msg: String) {
-        if(Config.debug) console.sendMessage("$PLUGIN_CHAT_PREFIX $msg")
-    }
 }
 
 @KoinApiExtension

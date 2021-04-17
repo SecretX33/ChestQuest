@@ -1,7 +1,6 @@
-package com.github.secretx33.chestquest.events
+package com.github.secretx33.chestquest.eventlisteners
 
 import com.github.secretx33.chestquest.repository.ChestRepo
-import com.github.secretx33.chestquest.utils.Utils.debugMessage
 import com.github.secretx33.chestquest.utils.isChest
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -14,42 +13,40 @@ import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.plugin.Plugin
 import org.koin.core.component.KoinApiExtension
+import java.util.logging.Logger
 
 @KoinApiExtension
-class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener {
+class ChestItemMoveListener(plugin: Plugin, private val chestRepo: ChestRepo, private val log: Logger) : Listener {
 
     init { Bukkit.getPluginManager().registerEvents(this, plugin) }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    private fun onItemDrag(event: InventoryDragEvent){
-        val inv = event.inventory
-        val topInvSize = event.view.topInventory.size
-        val editingTopInv = event.rawSlots.toSet().any { it < topInvSize }
+    private fun InventoryDragEvent.onItemDrag() {
+        val topInvSize = view.topInventory.size
+        val editingTopInv = rawSlots.any { it < topInvSize }
 
-        if(editingTopInv && inv.isChest() && chestRepo.isVirtualInventory(inv)){
-            event.isCancelled = true
+        if(editingTopInv && inventory.isChest() && chestRepo.isChestInventory(inventory)){
+            isCancelled = true
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    private fun onItemMove(event: InventoryClickEvent) {
-        if(event.clickedInventory == null) return
+    private fun InventoryClickEvent.onItemPut() {
+        if(clickedInventory == null) return
 
-        val inv = event.inventory
-        if (event.isPutAction() && inv.isChest() && chestRepo.isVirtualInventory(inv)){
-            event.isCancelled = true
+        if(isPutAction() && inventory.isChest() && chestRepo.isChestInventory(inventory)){
+            isCancelled = true
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    private fun onItemClickMonitor(event: InventoryClickEvent) {
-        if(event.clickedInventory == null) return
-        val inv = event.inventory
-        val player = event.whoClicked as Player
+    private fun InventoryClickEvent.onItemPickUp() {
+        if(clickedInventory == null) return
+        val player = whoClicked as? Player ?: return
 
-        if(event.isPickAction() && inv.isChest() && chestRepo.isChestInventory(inv)){
-            debugMessage("Registered pickup actions of ${player.name}, saving to prevent exploits")
-            chestRepo.updateInventory(player.uniqueId, inv)
+        if(isPickAction() && inventory.isChest() && chestRepo.isChestInventory(inventory)){
+            log.fine("Registered pickup actions of ${player.name}, saving to prevent exploits")
+            chestRepo.updateInventory(player.uniqueId, inventory)
         }
     }
 
@@ -64,6 +61,8 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         return false
     }
 
+    private fun InventoryAction.isPickUp() = this == InventoryAction.PICKUP_ALL || this == InventoryAction.PICKUP_HALF || this == InventoryAction.PICKUP_SOME || this == InventoryAction.PICKUP_ONE
+
 //    private fun InventoryClickEvent.isSwapInside(): Boolean = action == InventoryAction.SWAP_WITH_CURSOR && clickedInventory.type != InventoryType.PLAYER && inventory.type != InventoryType.PLAYER
 
     private fun InventoryClickEvent.isPutAction(): Boolean {
@@ -71,13 +70,11 @@ class ItemMoveEvent(plugin: Plugin, private val chestRepo: ChestRepo) : Listener
         if(action == InventoryAction.MOVE_TO_OTHER_INVENTORY && clickedInventory.type == InventoryType.PLAYER && clickedInventory.type != inventory.type)
             return true
 
-        if(action.isPlace() && clickedInventory.type != InventoryType.PLAYER && inventory.type != InventoryType.PLAYER)
+        if(action.isPut() && clickedInventory.type != InventoryType.PLAYER && inventory.type != InventoryType.PLAYER)
             return true
 
         return false
     }
 
-    private fun InventoryAction.isPickUp() = this == InventoryAction.PICKUP_ALL || this == InventoryAction.PICKUP_HALF || this == InventoryAction.PICKUP_SOME || this == InventoryAction.PICKUP_ONE
-
-    private fun InventoryAction.isPlace() = this == InventoryAction.PLACE_ALL || this == InventoryAction.PLACE_SOME || this == InventoryAction.PLACE_ONE || this == InventoryAction.SWAP_WITH_CURSOR
+    private fun InventoryAction.isPut() = this == InventoryAction.PLACE_ALL || this == InventoryAction.PLACE_SOME || this == InventoryAction.PLACE_ONE || this == InventoryAction.SWAP_WITH_CURSOR
 }

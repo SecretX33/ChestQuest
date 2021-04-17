@@ -15,7 +15,6 @@ import org.bukkit.inventory.Inventory
 import org.koin.core.component.KoinApiExtension
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.NoSuchElementException
 
 @KoinApiExtension
 class ChestRepo(private val db: SQLite) {
@@ -65,8 +64,6 @@ class ChestRepo(private val db: SQLite) {
     }
 
     fun isChestInventory(inv: Inventory): Boolean = chestContents.containsValue(inv)
-
-    fun isVirtualInventory(inv: Inventory): Boolean = isChestInventory(inv)
 
     fun isQuestChest(location: Location): Boolean = questChests.containsKey(location)
 

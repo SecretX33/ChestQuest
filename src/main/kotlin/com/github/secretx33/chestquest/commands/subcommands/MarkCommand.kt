@@ -2,12 +2,10 @@ package com.github.secretx33.chestquest.commands.subcommands
 
 import com.github.secretx33.chestquest.repository.ChestRepo
 import com.github.secretx33.chestquest.utils.*
-import com.github.secretx33.chestquest.utils.Utils.consoleMessage
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.koin.core.component.KoinApiExtension
-import java.util.*
 
 @KoinApiExtension
 class MarkCommand : SubCommand(), CustomKoinComponent {
@@ -23,19 +21,17 @@ class MarkCommand : SubCommand(), CustomKoinComponent {
             player.sendMessage("${ChatColor.RED}Please type a number greater than 0 after ${ChatColor.GOLD}mark${ChatColor.RED}. Command usage: /$alias $name <number>")
             return
         }
+        val chest = player.getTargetBlock(null, 5)?.takeIf { it.isChest() } ?: return
         val order = strings[1].toInt()
 
-        player.getTargetBlock(null, 5)?.takeIf { it.isChest() }?.let { chest ->
-            // if chest is already a quest chest, warn and return
-            if(chestRepo.isQuestChest(chest.location)) {
-                player.message("${ChatColor.RED}This chest is already a Quest Chest")
-                return
-            }
-            // mark chest as 'quest chest'
-            chestRepo.addQuestChest(chest.location, order)
-            player.message("Marked chest at ${chest.coordinates()} as a Quest Chest ${ChatColor.BLUE}$order")
-            consoleMessage("Marked chest at ${chest.coordinates()} as a Quest Chest ${ChatColor.BLUE}$order")
+        // if chest is already a quest chest, warn and return
+        if(chestRepo.isQuestChest(chest.location)) {
+            player.message("${ChatColor.RED}This chest is already a Quest Chest")
+            return
         }
+        // mark chest as 'quest chest'
+        chestRepo.addQuestChest(chest.location, order)
+        player.message("Marked chest at ${chest.coordinates()} as a Quest Chest ${ChatColor.BLUE}$order")
     }
 
     override fun onCommandByConsole(sender: CommandSender, alias: String, strings: Array<String>) {
