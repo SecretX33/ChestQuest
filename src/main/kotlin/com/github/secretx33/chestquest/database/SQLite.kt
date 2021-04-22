@@ -38,7 +38,11 @@ class SQLite(plugin: Plugin, private val config: Config, private val log: Logger
 
     init { initialize() }
 
-    fun close() = ds.safeClose()
+    fun close() = runBlocking {
+        withLocks(chestQuestLock, chestContentLock, playerProgressLock) {
+            ds.safeClose()
+        }
+    }
 
     private fun initialize() {
         try {
@@ -276,6 +280,15 @@ class SQLite(plugin: Plugin, private val config: Config, private val log: Logger
     private fun AutoCloseable?.safeClose() { runCatching { this?.close() } }
 
     private fun newEmptyInventory(): Inventory = Bukkit.createInventory(null, InventoryType.CHEST)
+
+    private suspend fun withLocks(vararg locks: Semaphore, block: () -> Unit) {
+        try {
+            locks.forEach { it.acquire() }
+            block()
+        } finally {
+            locks.forEach { runCatching { it.release() } }
+        }
+    }
 
     private suspend fun <T> withStatement(@Language("SQL") statement: String, semaphore: Semaphore, prepareBlock: PreparedStatement.() -> T): T {
         semaphore.withPermit {

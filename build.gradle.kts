@@ -20,10 +20,9 @@ plugins {
 }
 
 group = "com.github.secretx33"
-version = "1.0.5"
+version = "1.0.6"
 
 repositories {
-    jcenter()
     mavenCentral()
     maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
     maven { url = uri("https://oss.sonatype.org/content/groups/public/") }
